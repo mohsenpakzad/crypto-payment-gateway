@@ -1,10 +1,9 @@
-use sea_orm::DbConn;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
-
 use crate::{
     entities::{prelude::*, user},
     errors::AppError,
 };
+use sea_orm::DbConn;
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
 
 pub async fn find_by_username(
     db: &DbConn,
