@@ -1,5 +1,5 @@
 [package]
-name = "payment-gateway"
+name = "crypto-payment-gateway"
 version = "1.0.0"
 edition = "2021"
 
