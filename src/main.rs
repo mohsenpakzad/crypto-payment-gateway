@@ -1,5 +1,6 @@
 use crate::config::AppConfig;
 use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use migration::DbErr;
 use sea_orm::{ConnectOptions, Database, DbConn};
 
@@ -26,6 +27,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(db_data.clone())
+            .wrap(HttpAuthentication::bearer(security::jwt::validator))
             .service(web::scope("/api") /* Add your apis here */)
     })
     .bind((config.host, config.port))?

@@ -53,3 +53,22 @@ fn verify_jwt(token: &str) -> Option<TokenData<Claims>> {
     None
 }
 
+pub async fn validator(
+    req: ServiceRequest,
+    credentials: BearerAuth,
+) -> Result<ServiceRequest, (Error, ServiceRequest)> {
+    let token = credentials.token();
+    let verify_res = verify_jwt(&token);
+
+    if verify_res.is_some() {
+        req.extensions_mut().insert(verify_res.unwrap().claims.sub);
+        return Ok(req);
+    }
+
+    let config = req
+        .app_data::<Config>()
+        .cloned()
+        .unwrap_or_default()
+        .scope("");
+    Err((AuthenticationError::from(config).into(), req))
+}
