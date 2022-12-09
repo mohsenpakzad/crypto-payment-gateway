@@ -7,6 +7,7 @@ pub struct AppConfig {
     pub host: String,
     pub port: u16,
     pub database_url: String,
+    pub jwt_secret: String,
 }
 
 impl AppConfig {
