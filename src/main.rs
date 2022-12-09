@@ -28,8 +28,11 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .app_data(db_data.clone())
             .configure(handlers::auth_handler::config)
-            .wrap(HttpAuthentication::bearer(security::jwt::validator))
-            .service(web::scope("/api") /* Add your apis here */)
+            .service(
+                web::scope("/api")
+                    .wrap(HttpAuthentication::bearer(security::jwt::validator))
+                    /* Add your apis here */
+            )
     })
     .bind((config.host, config.port))?
     .run()
