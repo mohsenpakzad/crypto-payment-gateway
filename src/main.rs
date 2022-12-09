@@ -27,6 +27,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(db_data.clone())
+            .configure(handlers::auth_handler::config)
             .wrap(HttpAuthentication::bearer(security::jwt::validator))
             .service(web::scope("/api") /* Add your apis here */)
     })
