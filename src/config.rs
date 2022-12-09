@@ -1,5 +1,7 @@
 use config::{Config, ConfigError};
 use log::info;
+use migration::DbErr;
+use sea_orm::{ConnectOptions, Database, DbConn};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -22,5 +24,14 @@ impl AppConfig {
 
         let app_config: AppConfig = config.try_deserialize()?;
         Ok(app_config)
+    }
+
+    pub async fn setup_db(&self) -> Result<DbConn, DbErr> {
+        info!("Setup database");
+
+        let mut opt = ConnectOptions::new(self.database_url.clone());
+        opt.sqlx_logging(false);
+
+        Ok(Database::connect(opt).await?)
     }
 }
