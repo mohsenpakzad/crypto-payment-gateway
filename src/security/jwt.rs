@@ -34,23 +34,12 @@ pub fn generate_jwt(user_id: i32) -> String {
 }
 
 fn verify_jwt(token: &str) -> Option<TokenData<Claims>> {
-    let decode_res = decode::<Claims>(
+    decode::<Claims>(
         token,
         &DecodingKey::from_secret(std::env::var("JWT_SECRET").unwrap().as_ref()),
         &Validation::new(Algorithm::HS512),
     )
-    .ok();
-
-    if decode_res.is_some() {
-        // verify expiration date
-        let token_data = decode_res.unwrap();
-        return if token_data.claims.exp >= Utc::now().timestamp() {
-            Some(token_data)
-        } else {
-            None
-        };
-    }
-    None
+    .ok()
 }
 
 pub async fn validator(
