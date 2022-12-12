@@ -1,5 +1,6 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use derive_more::{Display, Error};
+use migration::DbErr;
 
 #[derive(Debug, Display, Error)]
 pub enum AppError {
@@ -28,5 +29,11 @@ impl ResponseError for AppError {
 
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code()).body(self.to_string())
+    }
+}
+
+impl Into<AppError> for DbErr {
+    fn into(self) -> AppError {
+        AppError::DataBaseError
     }
 }

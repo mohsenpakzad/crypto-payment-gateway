@@ -13,9 +13,9 @@ pub async fn find_by_username(
         .filter(user::Column::Username.eq(username.clone()))
         .one(db)
         .await
-        .map_err(|_| AppError::DataBaseError)?)
+        .map_err(Into::into)?)
 }
 
 pub async fn create(db: &DbConn, user: user::ActiveModel) -> Result<user::Model, AppError> {
-    Ok(user.insert(db).await.map_err(|_| AppError::DataBaseError)?)
+    Ok(user.insert(db).await.map_err(Into::into)?)
 }
