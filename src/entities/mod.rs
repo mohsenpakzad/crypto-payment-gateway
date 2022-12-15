@@ -2,4 +2,11 @@
 
 pub mod prelude;
 
+pub mod crypto_currency;
+pub mod fiat_currency;
+pub mod network;
+pub mod payment;
 pub mod user;
+pub mod user_transaction;
+pub mod wallet;
+pub mod wallet_transaction;

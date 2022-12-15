@@ -4,34 +4,38 @@ use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "user")]
+#[sea_orm(table_name = "crypto_currency")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    #[sea_orm(unique)]
-    pub username: String,
-    #[serde(skip_serializing)]
-    pub password_hash: String,
-    pub created_at: DateTime,
+    pub name: String,
+    pub symbol: String,
+    pub network_id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::network::Entity",
+        from = "Column::NetworkId",
+        to = "super::network::Column::Id",
+        on_update = "NoAction",
+        on_delete = "NoAction"
+    )]
+    Network,
     #[sea_orm(has_many = "super::payment::Entity")]
     Payment,
-    #[sea_orm(has_many = "super::user_transaction::Entity")]
-    UserTransaction,
+}
+
+impl Related<super::network::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Network.def()
+    }
 }
 
 impl Related<super::payment::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Payment.def()
-    }
-}
-
-impl Related<super::user_transaction::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::UserTransaction.def()
     }
 }
 

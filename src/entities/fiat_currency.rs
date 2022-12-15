@@ -4,15 +4,12 @@ use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "user")]
+#[sea_orm(table_name = "fiat_currency")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    #[sea_orm(unique)]
-    pub username: String,
-    #[serde(skip_serializing)]
-    pub password_hash: String,
-    pub created_at: DateTime,
+    pub name: String,
+    pub symbol: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
