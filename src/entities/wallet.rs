@@ -3,6 +3,15 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize)]
+#[sea_orm(rs_type = "String", db_type = "String(None)")]
+pub enum WalletStatus {
+    #[sea_orm(string_value = "FREE")]
+    Free,
+    #[sea_orm(string_value = "BUSY")]
+    Busy,
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "wallet")]
 pub struct Model {
@@ -10,7 +19,7 @@ pub struct Model {
     pub id: i32,
     pub address: String,
     pub network_id: i32,
-    pub status: String,
+    pub status: WalletStatus,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

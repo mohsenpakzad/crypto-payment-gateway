@@ -3,12 +3,25 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize)]
+#[sea_orm(rs_type = "String", db_type = "String(None)")]
+pub enum PaymentStatus {
+    #[sea_orm(string_value = "WAITING")]
+    Waiting,
+    #[sea_orm(string_value = "CONFIRMED")]
+    Confirmed,
+    #[sea_orm(string_value = "VERIFIED")]
+    Verified,
+    #[sea_orm(string_value = "EXPIRED")]
+    Expired,
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "payment")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub status: String,
+    pub status: PaymentStatus,
     pub amount: Decimal,
     pub user_id: i32,
     pub fiat_currency_id: i32,
