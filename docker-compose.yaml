@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  dbpostgres:
+    image: postgres:15.1-alpine
+    hostname: postgres
+    ports:
+      - '6543:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+      POSTGRES_DB: crypto-payment-gateway
+    volumes: 
+      - dbpostgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - dbpostgres
+    ports:
+      - "5555:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+    restart: unless-stopped
+
+volumes:
+  dbpostgres:
+    driver: local
