@@ -1,9 +1,12 @@
+use crate::impl_crud;
 use crate::{
     entities::{prelude::*, user},
     errors::AppError,
 };
-use sea_orm::DbConn;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{DbConn, DeleteResult};
+
+impl_crud!(User, user, AppError, i32);
 
 pub async fn find_by_username(
     db: &DbConn,
@@ -14,8 +17,4 @@ pub async fn find_by_username(
         .one(db)
         .await
         .map_err(Into::into)?)
-}
-
-pub async fn create(db: &DbConn, user: user::ActiveModel) -> Result<user::Model, AppError> {
-    Ok(user.insert(db).await.map_err(Into::into)?)
 }
