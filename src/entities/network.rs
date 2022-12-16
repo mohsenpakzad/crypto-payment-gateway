@@ -9,7 +9,9 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub name: String,
+    #[serde(skip_serializing)]
     pub http_address_url: String,
+    #[serde(skip_serializing)]
     pub websocket_address_url: String,
 }
 
