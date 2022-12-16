@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .wrap(HttpAuthentication::bearer(security::jwt::validator))
-                    /* Add your apis here */
+                    .configure(handlers::asset_handler::config),
             )
     })
     .bind((config.host, config.port))?

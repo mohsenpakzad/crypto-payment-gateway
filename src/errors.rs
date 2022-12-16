@@ -15,6 +15,9 @@ pub enum AppError {
 
     #[display(fmt = "User with given id doesn't exists")]
     UserNotFoundWithGivenId,
+
+    #[display(fmt = "Network with given id doesn't exists")]
+    NetworkNotFoundWithGivenId,
 }
 
 impl ResponseError for AppError {
@@ -24,6 +27,7 @@ impl ResponseError for AppError {
             AppError::UsernameAlreadyFound => StatusCode::CONFLICT,
             AppError::WrongPassword => StatusCode::UNAUTHORIZED,
             AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
         }
     }
 
