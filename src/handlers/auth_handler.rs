@@ -1,6 +1,6 @@
-use crate::dtos::user::{CreateUser, LoginUser};
 use crate::entities::user;
 use crate::errors::AppError;
+use crate::models::dtos::{CreateUser, LoginUser};
 use crate::security::{hash, jwt};
 use crate::services::user_service;
 use actix_web::{

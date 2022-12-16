@@ -18,3 +18,4 @@ pub struct LoginUser {
     #[validate(length(min = 3))]
     pub password: String,
 }
+

@@ -3,10 +3,10 @@ use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 
 mod config;
-mod dtos;
 mod entities;
 mod errors;
 mod handlers;
+mod models;
 mod security;
 mod services;
 
