@@ -6,6 +6,7 @@ mod config;
 mod entities;
 mod errors;
 mod handlers;
+mod macros;
 mod models;
 mod security;
 mod services;
