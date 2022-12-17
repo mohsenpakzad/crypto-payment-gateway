@@ -50,7 +50,7 @@ pub async fn validator(
     let verify_res = verify_jwt(&token);
 
     if verify_res.is_some() {
-        req.extensions_mut().insert(verify_res.unwrap().claims.sub);
+        req.extensions_mut().insert(verify_res.unwrap().claims);
         return Ok(req);
     }
 
