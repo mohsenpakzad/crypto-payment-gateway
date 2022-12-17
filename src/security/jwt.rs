@@ -20,7 +20,7 @@ pub fn generate_jwt(user_id: i32) -> String {
     let claims = Claims {
         sub: user_id.to_string(),
         iat: Utc::now().timestamp(),
-        exp: (Utc::now() + Duration::weeks(1)).timestamp(),
+        exp: (Utc::now() + Duration::weeks(1)).timestamp(), //TODO: use config
     };
 
     let token = encode(
