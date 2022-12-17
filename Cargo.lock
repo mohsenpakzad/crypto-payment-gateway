@@ -929,6 +929,7 @@ dependencies = [
  "reqwest",
  "sea-orm",
  "serde",
+ "serde_json",
  "validator",
  "web3",
 ]

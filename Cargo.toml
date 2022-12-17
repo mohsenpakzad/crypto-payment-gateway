@@ -22,5 +22,6 @@ migration = { path = "migration" }
 reqwest = { version = "0.11.13", features = ["json"] }
 sea-orm = { version = "0.10.5", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
 serde = { version = "1.0.149", features = ["derive"] }
+serde_json = "1.0.89"
 validator = { version = "0.16.0", features = ["derive", "phone"] }
 web3 = "0.18.0"
