@@ -25,12 +25,22 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Payment::Status).string().not_null())
-                    .col(ColumnDef::new(Payment::Amount).decimal().not_null())
                     .col(ColumnDef::new(Payment::UserId).integer().not_null())
                     .col(ColumnDef::new(Payment::FiatCurrencyId).integer().not_null())
+                    .col(ColumnDef::new(Payment::Amount).decimal().not_null())
+                    .col(ColumnDef::new(Payment::CallbackUrl).string().not_null())
+                    .col(ColumnDef::new(Payment::SellerOrderId).string().not_null())
+                    .col(ColumnDef::new(Payment::Description).string())
+                    .col(ColumnDef::new(Payment::PayerName).string())
+                    .col(ColumnDef::new(Payment::PayerPhone).string())
+                    .col(ColumnDef::new(Payment::PayerMail).string())
+                    .col(ColumnDef::new(Payment::Status).string().not_null())
                     .col(ColumnDef::new(Payment::CryptoCurrencyId).integer())
                     .col(ColumnDef::new(Payment::DestWalletId).integer())
+                    .col(ColumnDef::new(Payment::CreatedAt).date_time().not_null())
+                    .col(ColumnDef::new(Payment::ExpiredAt).date_time().not_null())
+                    .col(ColumnDef::new(Payment::DoneAt).date_time())
+                    .col(ColumnDef::new(Payment::VerifiedAt).date_time())
                     .foreign_key(
                         ForeignKey::create()
                             .from(Payment::Table, Payment::UserId)
@@ -67,10 +77,20 @@ impl MigrationTrait for Migration {
 pub enum Payment {
     Table,
     Id,
-    Status,
-    Amount,
     UserId,
     FiatCurrencyId,
+    Amount,
+    CallbackUrl,
+    SellerOrderId,
+    Description,
+    PayerName,
+    PayerPhone,
+    PayerMail,
+    Status,
     CryptoCurrencyId,
     DestWalletId,
+    CreatedAt,
+    ExpiredAt,
+    DoneAt,
+    VerifiedAt,
 }

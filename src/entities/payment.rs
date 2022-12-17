@@ -8,25 +8,34 @@ use serde::Serialize;
 pub enum PaymentStatus {
     #[sea_orm(string_value = "WAITING")]
     Waiting,
-    #[sea_orm(string_value = "CONFIRMED")]
-    Confirmed,
+    #[sea_orm(string_value = "DONE")]
+    Done,
     #[sea_orm(string_value = "VERIFIED")]
     Verified,
     #[sea_orm(string_value = "EXPIRED")]
     Expired,
 }
-
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "payment")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub status: PaymentStatus,
-    pub amount: Decimal,
     pub user_id: i32,
     pub fiat_currency_id: i32,
+    pub amount: Decimal,
+    pub callback_url: String,
+    pub seller_order_id: String,
+    pub description: Option<String>,
+    pub payer_name: Option<String>,
+    pub payer_phone: Option<String>,
+    pub payer_mail: Option<String>,
+    pub status: PaymentStatus,
     pub crypto_currency_id: Option<i32>,
     pub dest_wallet_id: Option<i32>,
+    pub created_at: DateTime,
+    pub expired_at: DateTime,
+    pub done_at: Option<DateTime>,
+    pub verified_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
