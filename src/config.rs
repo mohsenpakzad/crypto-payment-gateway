@@ -4,12 +4,13 @@ use migration::DbErr;
 use sea_orm::{ConnectOptions, Database, DbConn};
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
     pub host: String,
     pub port: u16,
     pub database_url: String,
     pub jwt_secret: String,
+    pub base_payment_gateway_address: String,
 }
 
 impl AppConfig {

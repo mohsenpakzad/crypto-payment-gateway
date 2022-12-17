@@ -22,10 +22,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to setup the database");
 
     let db_data = web::Data::new(db);
+    let config_data = web::Data::new(config.clone());
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .app_data(config_data.clone())
             .app_data(db_data.clone())
             .configure(handlers::auth_handler::config)
             .service(
