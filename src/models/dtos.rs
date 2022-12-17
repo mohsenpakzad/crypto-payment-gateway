@@ -1,3 +1,4 @@
+use sea_orm::prelude::Decimal;
 use serde::Deserialize;
 use validator::Validate;
 
@@ -49,3 +50,32 @@ pub struct CreateFiatCurrency {
     pub symbol: String,
 }
 
+#[derive(Deserialize, Clone, Debug, Validate)]
+pub struct CreatePayment {
+    pub fiat_currency_id: i32,
+
+    pub amount: Decimal,
+
+    #[validate(url)]
+    pub callback_url: String,
+
+    #[validate(length(max = 50))]
+    pub seller_order_id: String,
+
+    #[validate(length(max = 255))]
+    pub description: Option<String>,
+
+    #[validate(length(max = 255))]
+    pub payer_name: Option<String>,
+
+    #[validate(phone)]
+    pub payer_phone: Option<String>,
+
+    #[validate(email)]
+    pub payer_mail: Option<String>,
+}
+
+#[derive(Deserialize, Clone, Debug, Validate)]
+pub struct VerifyPayment {
+    pub id: i32,
+}

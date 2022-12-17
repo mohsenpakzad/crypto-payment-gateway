@@ -1,8 +1,10 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
-use derive_more::{Display, Error};
+use derive_more::Display;
 use migration::DbErr;
 
-#[derive(Debug, Display, Error)]
+use crate::entities::payment::PaymentStatus;
+
+#[derive(Debug, Display)]
 pub enum AppError {
     #[display(fmt = "Internal Server Error")]
     DataBaseError,
@@ -18,6 +20,15 @@ pub enum AppError {
 
     #[display(fmt = "Network with given id doesn't exists")]
     NetworkNotFoundWithGivenId,
+
+    #[display(fmt = "Fiat Currency with given id doesn't exists")]
+    FiatCurrencyNotFoundWithGivenId,
+
+    #[display(fmt = "There is no payment with such id or it isn't belongs to you")]
+    BadPayment,
+
+    #[display(fmt = "Payment should be done to be verified, current state: {}", _0)]
+    PaymentCannotBeVerified(PaymentStatus),
 }
 
 impl ResponseError for AppError {
@@ -28,6 +39,9 @@ impl ResponseError for AppError {
             AppError::WrongPassword => StatusCode::UNAUTHORIZED,
             AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::BadPayment => StatusCode::BAD_REQUEST,
+            AppError::PaymentCannotBeVerified(_) => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -38,6 +52,8 @@ impl ResponseError for AppError {
 
 impl Into<AppError> for DbErr {
     fn into(self) -> AppError {
+        log::error!("Database error: {self}");
+
         AppError::DataBaseError
     }
 }
