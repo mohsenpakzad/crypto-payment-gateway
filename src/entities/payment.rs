@@ -15,6 +15,7 @@ pub enum PaymentStatus {
     #[sea_orm(string_value = "EXPIRED")]
     Expired,
 }
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "payment")]
 pub struct Model {
@@ -31,6 +32,7 @@ pub struct Model {
     pub payer_mail: Option<String>,
     pub status: PaymentStatus,
     pub crypto_currency_id: Option<i32>,
+    pub crypto_amount: Option<Decimal>,
     pub dest_wallet_id: Option<i32>,
     pub created_at: DateTime,
     pub expired_at: DateTime,

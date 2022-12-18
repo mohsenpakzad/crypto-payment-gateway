@@ -36,6 +36,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Payment::PayerMail).string())
                     .col(ColumnDef::new(Payment::Status).string().not_null())
                     .col(ColumnDef::new(Payment::CryptoCurrencyId).integer())
+                    .col(ColumnDef::new(Payment::CryptoAmount).decimal())
                     .col(ColumnDef::new(Payment::DestWalletId).integer())
                     .col(ColumnDef::new(Payment::CreatedAt).date_time().not_null())
                     .col(ColumnDef::new(Payment::ExpiredAt).date_time().not_null())
@@ -88,6 +89,7 @@ pub enum Payment {
     PayerMail,
     Status,
     CryptoCurrencyId,
+    CryptoAmount,
     DestWalletId,
     CreatedAt,
     ExpiredAt,
