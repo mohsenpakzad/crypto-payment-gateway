@@ -32,6 +32,7 @@ async fn create_payment(
         .await?
         .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
 
+    let payment_waiting_duration = Duration::minutes(10); //TODO: use config
     let payment = payment::ActiveModel {
         user_id: Set(user.id),
         fiat_currency_id: Set(payment.fiat_currency_id.clone()),
@@ -44,10 +45,12 @@ async fn create_payment(
         payer_mail: Set(payment.payer_mail.clone()),
         status: Set(PaymentStatus::Waiting),
         created_at: Set(Utc::now().naive_utc()),
-        expired_at: Set(Utc::now().naive_utc() + Duration::minutes(10)), //TODO: use config
+        expired_at: Set(Utc::now().naive_utc() + payment_waiting_duration),
         ..Default::default()
     };
     let payment = payment_service::create(&db, payment).await?;
+
+    payment_service::spawn_payment_exp_scheduler(payment_waiting_duration, payment.id, db);
 
     let payment_response = json!({
         "id": payment.id,
