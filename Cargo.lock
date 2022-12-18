@@ -930,6 +930,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "tokio",
  "validator",
  "web3",
 ]
