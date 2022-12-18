@@ -12,6 +12,8 @@ pub enum PaymentStatus {
     Done,
     #[sea_orm(string_value = "VERIFIED")]
     Verified,
+    #[sea_orm(string_value = "FINISHED")]
+    Finished,
     #[sea_orm(string_value = "EXPIRED")]
     Expired,
 }
