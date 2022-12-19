@@ -1,5 +1,4 @@
 use config::{Config, ConfigError};
-use log::info;
 use migration::DbErr;
 use sea_orm::{ConnectOptions, Database, DbConn};
 use serde::Deserialize;
@@ -17,7 +16,7 @@ impl AppConfig {
     pub fn from_env() -> Result<Self, ConfigError> {
         dotenvy::dotenv().ok();
 
-        info!("Loading configurations");
+        log::info!("Loading configurations");
 
         let config = Config::builder()
             .add_source(config::Environment::default())
@@ -28,7 +27,7 @@ impl AppConfig {
     }
 
     pub async fn setup_db(&self) -> Result<DbConn, DbErr> {
-        info!("Setup database");
+        log::info!("Setup database");
 
         let mut opt = ConnectOptions::new(self.database_url.clone());
         opt.sqlx_logging(false);
