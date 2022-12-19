@@ -88,6 +88,7 @@ async fn verify_payment(
     payment.verified_at = Set(Some(Utc::now().naive_utc()));
 
     let payment = payment_service::update(&db, payment).await?;
+    log::info!("Payment with id {} is verified", payment.id);
 
     payment_service::spawn_crypto_seller(payment.clone(), db);
 
