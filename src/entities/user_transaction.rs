@@ -17,9 +17,10 @@ pub enum UserTransactionType {
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub r#type: UserTransactionType,
-    pub amount: Decimal,
     pub user_id: i32,
+    #[serde(rename = "type")]
+    pub typ: UserTransactionType,
+    pub amount: Decimal,
     pub fiat_currency_id: i32,
     pub created_at: DateTime,
     #[sea_orm(unique)]

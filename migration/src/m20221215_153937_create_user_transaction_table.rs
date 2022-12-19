@@ -24,9 +24,9 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(UserTransaction::Type).string().not_null())
-                    .col(ColumnDef::new(UserTransaction::Amount).decimal().not_null())
                     .col(ColumnDef::new(UserTransaction::UserId).integer().not_null())
+                    .col(ColumnDef::new(UserTransaction::Typ).string().not_null())
+                    .col(ColumnDef::new(UserTransaction::Amount).decimal().not_null())
                     .col(
                         ColumnDef::new(UserTransaction::FiatCurrencyId)
                             .integer()
@@ -73,9 +73,9 @@ impl MigrationTrait for Migration {
 pub enum UserTransaction {
     Table,
     Id,
-    Type,
-    Amount,
     UserId,
+    Typ,
+    Amount,
     FiatCurrencyId,
     CreatedAt,
     DepositPaymentId,
