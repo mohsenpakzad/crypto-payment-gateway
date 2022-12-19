@@ -88,6 +88,9 @@ async fn verify_payment(
     payment.verified_at = Set(Some(Utc::now().naive_utc()));
 
     let payment = payment_service::update(&db, payment).await?;
+
+    payment_service::spawn_crypto_seller(payment.clone(), db);
+
     Ok(HttpResponse::Ok().json(payment))
 }
 

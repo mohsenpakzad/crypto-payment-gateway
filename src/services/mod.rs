@@ -1,5 +1,6 @@
 pub mod crypto_currency_service;
 pub mod fiat_currency_service;
+pub mod kucoin_api_service;
 pub mod network_service;
 pub mod payment_service;
 pub mod user_service;
