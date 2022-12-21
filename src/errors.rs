@@ -5,7 +5,7 @@ use migration::DbErr;
 
 #[derive(Debug, Display)]
 pub enum AppError {
-    #[display(fmt = "Internal Server Error")]
+    #[display(fmt = "Database Error")]
     DataBaseError,
 
     #[display(fmt = "User with given username already exists")]
