@@ -261,6 +261,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-ws"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "535aec173810be3ca6f25dd5b4d431ae7125d62000aa3cbae1ec739921b02cf3"
+dependencies = [
+ "actix-codec",
+ "actix-http",
+ "actix-web",
+ "futures-core",
+ "tokio",
+]
+
+[[package]]
 name = "adler"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -955,12 +968,14 @@ dependencies = [
  "actix-web-grants",
  "actix-web-httpauth",
  "actix-web-validator",
+ "actix-ws",
  "argon2",
  "chrono",
  "config",
  "derive_more",
  "dotenvy",
  "env_logger",
+ "futures-util",
  "jsonwebtoken",
  "log",
  "migration",
