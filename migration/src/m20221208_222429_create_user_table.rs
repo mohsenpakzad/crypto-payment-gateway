@@ -25,6 +25,7 @@ impl MigrationTrait for Migration {
                             .unique_key(),
                     )
                     .col(ColumnDef::new(User::PasswordHash).string().not_null())
+                    .col(ColumnDef::new(User::Role).string().not_null())
                     .col(ColumnDef::new(User::CreatedAt).date_time().not_null())
                     .to_owned(),
             )
@@ -44,5 +45,6 @@ pub enum User {
     Id,
     Username,
     PasswordHash,
+    Role,
     CreatedAt,
 }

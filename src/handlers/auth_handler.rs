@@ -24,6 +24,7 @@ async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Res
     let user = user::ActiveModel {
         username: Set(new_user.username.clone()),
         password_hash: Set(password_hash),
+        role: Set(user::UserRole::User),
         created_at: Set(Utc::now().naive_utc()),
         ..Default::default()
     };

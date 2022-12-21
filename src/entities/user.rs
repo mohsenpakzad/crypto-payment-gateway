@@ -3,6 +3,15 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize)]
+#[sea_orm(rs_type = "String", db_type = "String(None)")]
+pub enum UserRole {
+    #[sea_orm(string_value = "USER")]
+    User,
+    #[sea_orm(string_value = "ADMIN")]
+    Admin,
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "user")]
 pub struct Model {
@@ -12,6 +21,7 @@ pub struct Model {
     pub username: String,
     #[serde(skip_serializing)]
     pub password_hash: String,
+    pub role: UserRole,
     pub created_at: DateTime,
 }
 
