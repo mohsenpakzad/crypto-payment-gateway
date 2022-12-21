@@ -1,8 +1,7 @@
-use actix_web::{http::StatusCode, HttpResponse, ResponseError};
+use crate::entities::payment::PaymentStatus;
+use actix_web::{http::StatusCode, Error, HttpResponse, ResponseError};
 use derive_more::Display;
 use migration::DbErr;
-
-use crate::entities::payment::PaymentStatus;
 
 #[derive(Debug, Display)]
 pub enum AppError {
@@ -24,11 +23,14 @@ pub enum AppError {
     #[display(fmt = "Fiat Currency with given id doesn't exists")]
     FiatCurrencyNotFoundWithGivenId,
 
-    #[display(fmt = "There is no payment with such id or it isn't belongs to you")]
-    BadPayment,
+    #[display(fmt = "Payment with given id doesn't exists")]
+    PaymentNotFoundWithGivenId,
 
-    #[display(fmt = "Payment should be done to be verified, current state: {}", _0)]
-    PaymentCannotBeVerified(PaymentStatus),
+    #[display(fmt = "This payment isn't belongs to you")]
+    PaymentIsNotBelongsToYou,
+
+    #[display(fmt = "Payment should be done to be verified, current status: {}", _0)]
+    PaymentShouldBeDone(PaymentStatus),
 }
 
 impl ResponseError for AppError {
@@ -40,8 +42,9 @@ impl ResponseError for AppError {
             AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::BadPayment => StatusCode::BAD_REQUEST,
-            AppError::PaymentCannotBeVerified(_) => StatusCode::BAD_REQUEST,
+            AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
+            AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
         }
     }
 

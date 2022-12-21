@@ -69,18 +69,18 @@ async fn verify_payment(
 
     let payment = payment_service::find_by_id(&db, payment.id)
         .await?
-        .ok_or(AppError::BadPayment)?;
+        .ok_or(AppError::PaymentNotFoundWithGivenId)?;
 
     let user = user_service::find_by_id(&db, user_id)
         .await?
         .ok_or(AppError::UserNotFoundWithGivenId)?;
 
     if payment.user_id != user.id {
-        return Err(AppError::BadPayment);
+        return Err(AppError::PaymentIsNotBelongsToYou);
     }
 
     if payment.status != PaymentStatus::Done {
-        return Err(AppError::PaymentCannotBeVerified(payment.status));
+        return Err(AppError::PaymentShouldBeDone(payment.status));
     }
 
     let mut payment = payment::ActiveModel::from(payment);
