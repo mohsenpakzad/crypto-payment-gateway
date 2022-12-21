@@ -1,4 +1,5 @@
 use crate::config::AppConfig;
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 
@@ -27,6 +28,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(Cors::permissive())
             .app_data(config_data.clone())
             .app_data(db_data.clone())
             .configure(handlers::auth_handler::config)
