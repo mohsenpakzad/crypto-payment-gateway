@@ -32,6 +32,9 @@ pub enum AppError {
     #[display(fmt = "This payment isn't belongs to you")]
     PaymentIsNotBelongsToYou,
 
+    #[display(fmt = "Payment is done or expired, payment status: {}", _0)]
+    PaymentIsDoneOrExpired(PaymentStatus),
+
     #[display(fmt = "Payment should be done to be verified, current status: {}", _0)]
     PaymentShouldBeDone(PaymentStatus),
 
@@ -51,6 +54,7 @@ impl ResponseError for AppError {
             AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
+            AppError::PaymentIsDoneOrExpired(_) => StatusCode::BAD_REQUEST,
             AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             AppError::NotFreeWallet => StatusCode::IM_USED,
         }

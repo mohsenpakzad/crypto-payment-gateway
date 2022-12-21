@@ -32,6 +32,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(config_data.clone())
             .app_data(db_data.clone())
             .configure(handlers::auth_handler::config)
+            .configure(handlers::ws_handler::config)
             .service(
                 web::scope("/api")
                     .wrap(HttpAuthentication::bearer(security::jwt::validator))
