@@ -4,6 +4,7 @@ use super::{
 use crate::entities::payment::PaymentStatus;
 use crate::entities::user_transaction::{self, UserTransactionType};
 use crate::impl_crud;
+use crate::services::wallet_service;
 use crate::{
     entities::{payment, prelude::*},
     errors::AppError,
@@ -22,6 +23,10 @@ pub fn spawn_payment_exp_scheduler(run_after: Duration, payment_id: i32, db: Dat
 
         if payment.status == PaymentStatus::Waiting {
             log::info!("Payment with id {} is expired", payment_id);
+
+            if let Some(dest_wallet_id) = payment.dest_wallet_id {
+                wallet_service::free(&db, dest_wallet_id).await.unwrap();
+            }
 
             let mut payment = payment::ActiveModel::from(payment);
             payment.status = Set(PaymentStatus::Expired);
