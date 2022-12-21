@@ -17,18 +17,6 @@ pub enum AppError {
     #[display(fmt = "Wrong password")]
     WrongPassword,
 
-    #[display(fmt = "User with given id doesn't exists")]
-    UserNotFoundWithGivenId,
-
-    #[display(fmt = "Network with given id doesn't exists")]
-    NetworkNotFoundWithGivenId,
-
-    #[display(fmt = "Fiat Currency with given id doesn't exists")]
-    FiatCurrencyNotFoundWithGivenId,
-
-    #[display(fmt = "Payment with given id doesn't exists")]
-    PaymentNotFoundWithGivenId,
-
     #[display(fmt = "This payment isn't belongs to you")]
     PaymentIsNotBelongsToYou,
 
@@ -40,6 +28,19 @@ pub enum AppError {
 
     #[display(fmt = "There is no free wallet for your selected network, please try again later")]
     NotFreeWallet,
+
+    // 404s
+    #[display(fmt = "User with given id doesn't exists")]
+    UserNotFoundWithGivenId,
+
+    #[display(fmt = "Network with given id doesn't exists")]
+    NetworkNotFoundWithGivenId,
+
+    #[display(fmt = "Fiat Currency with given id doesn't exists")]
+    FiatCurrencyNotFoundWithGivenId,
+
+    #[display(fmt = "Payment with given id doesn't exists")]
+    PaymentNotFoundWithGivenId,
 }
 
 impl ResponseError for AppError {
@@ -49,14 +50,15 @@ impl ResponseError for AppError {
             AppError::DataBaseError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::UsernameAlreadyFound => StatusCode::CONFLICT,
             AppError::WrongPassword => StatusCode::UNAUTHORIZED,
-            AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
             AppError::PaymentIsDoneOrExpired(_) => StatusCode::BAD_REQUEST,
             AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             AppError::NotFreeWallet => StatusCode::IM_USED,
+            // 404s
+            AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
         }
     }
 
