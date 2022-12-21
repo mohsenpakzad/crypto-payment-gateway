@@ -98,4 +98,3 @@ async fn verify_payment(
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(create_payment).service(verify_payment);
 }
-
