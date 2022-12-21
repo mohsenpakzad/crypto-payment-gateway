@@ -5,6 +5,9 @@ use migration::DbErr;
 
 #[derive(Debug, Display)]
 pub enum AppError {
+    #[display(fmt = "Internal Server Error")]
+    InternalServerError,
+
     #[display(fmt = "Database Error")]
     DataBaseError,
 
@@ -39,6 +42,7 @@ pub enum AppError {
 impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match *self {
+            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::DataBaseError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::UsernameAlreadyFound => StatusCode::CONFLICT,
             AppError::WrongPassword => StatusCode::UNAUTHORIZED,
@@ -54,6 +58,14 @@ impl ResponseError for AppError {
 
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code()).body(self.to_string())
+    }
+}
+
+impl Into<AppError> for Error {
+    fn into(self) -> AppError {
+        log::error!("Internal server error: {self}");
+
+        AppError::InternalServerError
     }
 }
 
