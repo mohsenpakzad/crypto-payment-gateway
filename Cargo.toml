@@ -9,6 +9,7 @@ members = [".", "migration" ]
 [dependencies]
 actix-cors = "0.6.4"
 actix-web = "4.2.1"
+actix-web-grants = "3.0.1"
 actix-web-httpauth = "0.8.0"
 actix-web-validator = "5.0.1"
 argon2 = "0.4.1"
