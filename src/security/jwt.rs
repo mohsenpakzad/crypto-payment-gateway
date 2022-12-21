@@ -1,4 +1,6 @@
+use crate::entities::user;
 use actix_web::{dev::ServiceRequest, Error, HttpMessage};
+use actix_web_grants::permissions::AttachPermissions;
 use actix_web_httpauth::extractors::{
     bearer::{BearerAuth, Config},
     AuthenticationError,
@@ -12,13 +14,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
+    pub role: String,
     pub iat: i64,
     pub exp: i64,
 }
 
-pub fn generate_jwt(user_id: i32) -> String {
+pub fn generate_jwt(user: &user::Model) -> String {
     let claims = Claims {
-        sub: user_id.to_string(),
+        sub: user.id.to_string(),
+        role: user.role.to_role_str(),
         iat: Utc::now().timestamp(),
         exp: (Utc::now() + Duration::weeks(1)).timestamp(), //TODO: use config
     };
@@ -50,7 +54,10 @@ pub async fn validator(
     let verify_res = verify_jwt(&token);
 
     if verify_res.is_some() {
-        req.extensions_mut().insert(verify_res.unwrap().claims);
+        let claims = verify_res.unwrap().claims;
+
+        req.attach(vec![claims.role.clone()]);
+        req.extensions_mut().insert(claims);
         return Ok(req);
     }
 

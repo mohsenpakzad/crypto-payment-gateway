@@ -12,6 +12,15 @@ pub enum UserRole {
     Admin,
 }
 
+impl UserRole {
+    pub fn to_role_str(&self) -> String {
+        match self {
+            UserRole::User => "ROLE_USER".to_owned(),
+            UserRole::Admin => "ROLE_ADMIN".to_owned(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "user")]
 pub struct Model {

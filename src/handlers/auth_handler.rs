@@ -32,7 +32,7 @@ async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Res
     let user = user_service::create(&db, user).await?;
 
     Ok(HttpResponse::Created()
-        .insert_header((header::AUTHORIZATION, jwt::generate_jwt(user.id)))
+        .insert_header((header::AUTHORIZATION, jwt::generate_jwt(&user)))
         .json(user))
 }
 
@@ -47,7 +47,7 @@ async fn login(login_user: Json<LoginUser>, db: Data<DbConn>) -> Result<impl Res
     }
 
     Ok(HttpResponse::Ok()
-        .insert_header((header::AUTHORIZATION, jwt::generate_jwt(user.id)))
+        .insert_header((header::AUTHORIZATION, jwt::generate_jwt(&user)))
         .finish())
 }
 
