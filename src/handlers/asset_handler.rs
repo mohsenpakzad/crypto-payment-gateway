@@ -12,6 +12,7 @@ use actix_web::{
     web::{Data, ServiceConfig},
     HttpResponse, Responder,
 };
+use actix_web_grants::proc_macro::has_any_role;
 use actix_web_validator::Json;
 use sea_orm::{DbConn, Set};
 
@@ -23,6 +24,7 @@ async fn get_all_networks(db: Data<DbConn>) -> Result<impl Responder, AppError> 
 }
 
 #[post("/networks")]
+#[has_any_role("ADMIN")]
 async fn create_network(
     network: Json<CreateNetwork>,
     db: Data<DbConn>,
@@ -46,6 +48,7 @@ async fn get_all_crypto_currencies(db: Data<DbConn>) -> Result<impl Responder, A
 }
 
 #[post("/crypto-currencies")]
+#[has_any_role("ADMIN")]
 async fn create_crypto_currency(
     crypto_currency: Json<CreateCryptoCurrency>,
     db: Data<DbConn>,
@@ -73,6 +76,7 @@ async fn get_all_wallets(db: Data<DbConn>) -> Result<impl Responder, AppError> {
 }
 
 #[post("/wallets")]
+#[has_any_role("ADMIN")]
 async fn create_wallet(
     wallet: Json<CreateWallet>,
     db: Data<DbConn>,
@@ -100,6 +104,7 @@ async fn get_all_fiat_currencies(db: Data<DbConn>) -> Result<impl Responder, App
 }
 
 #[post("/fiat-currencies")]
+#[has_any_role("ADMIN")]
 async fn create_fiat_currency(
     fiat_currency: Json<CreateFiatCurrency>,
     db: Data<DbConn>,
