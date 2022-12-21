@@ -31,6 +31,9 @@ pub enum AppError {
 
     #[display(fmt = "Payment should be done to be verified, current status: {}", _0)]
     PaymentShouldBeDone(PaymentStatus),
+
+    #[display(fmt = "There is no free wallet for your selected network, please try again later")]
+    NotFreeWallet,
 }
 
 impl ResponseError for AppError {
@@ -45,6 +48,7 @@ impl ResponseError for AppError {
             AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
             AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
+            AppError::NotFreeWallet => StatusCode::IM_USED,
         }
     }
 
