@@ -2,8 +2,9 @@ use crate::entities::payment::PaymentStatus;
 use actix_web::{http::StatusCode, Error, HttpResponse, ResponseError};
 use derive_more::Display;
 use migration::DbErr;
+use serde::Serialize;
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Serialize)]
 pub enum AppError {
     #[display(fmt = "Internal Server Error")]
     InternalServerError,
