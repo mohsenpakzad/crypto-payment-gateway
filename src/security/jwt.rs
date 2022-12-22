@@ -48,17 +48,32 @@ fn verify_jwt(token: &str) -> Option<TokenData<Claims>> {
 
 pub async fn validator(
     req: ServiceRequest,
-    credentials: BearerAuth,
+    credentials: Option<BearerAuth>,
 ) -> Result<ServiceRequest, (Error, ServiceRequest)> {
-    let token = credentials.token();
-    let verify_res = verify_jwt(&token);
+    log::debug!("Incoming Request: {} {}", req.method(), req.path());
 
-    if verify_res.is_some() {
-        let claims = verify_res.unwrap().claims;
+    if req.method().as_str() == "GET" {
+        match req.path() {
+            "/api/networks"
+            | "/api/crypto-currencies"
+            | "/api/wallets"
+            | "/api/fiat-currencies" => return Ok(req),
+            _ => {}
+        }
+    }
 
-        req.attach(vec![claims.role.clone()]);
-        req.extensions_mut().insert(claims);
-        return Ok(req);
+    if credentials.is_some() {
+        let credentials = credentials.unwrap();
+        let token = credentials.token();
+        let verify_res = verify_jwt(token);
+
+        if verify_res.is_some() {
+            let claims = verify_res.unwrap().claims;
+
+            req.attach(vec![claims.role.clone()]);
+            req.extensions_mut().insert(claims);
+            return Ok(req);
+        }
     }
 
     let config = req
@@ -66,5 +81,6 @@ pub async fn validator(
         .cloned()
         .unwrap_or_default()
         .scope("");
+
     Err((AuthenticationError::from(config).into(), req))
 }

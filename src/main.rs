@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
             .configure(handlers::ws_handler::config)
             .service(
                 web::scope("/api")
-                    .wrap(HttpAuthentication::bearer(security::jwt::validator))
+                    .wrap(HttpAuthentication::with_fn(security::jwt::validator))
                     .configure(handlers::payment_handler::config)
                     .configure(handlers::asset_handler::config),
             )
