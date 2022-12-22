@@ -40,6 +40,9 @@ pub enum AppError {
     #[display(fmt = "Fiat Currency with given id doesn't exists")]
     FiatCurrencyNotFoundWithGivenId,
 
+    #[display(fmt = "Crypto Currency with given id doesn't exists")]
+    CryptoCurrencyNotFoundWithGivenId,
+
     #[display(fmt = "Payment with given id doesn't exists")]
     PaymentNotFoundWithGivenId,
 }
@@ -59,6 +62,7 @@ impl ResponseError for AppError {
             AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::CryptoCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
             AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
         }
     }
