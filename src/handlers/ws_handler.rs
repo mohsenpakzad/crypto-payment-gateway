@@ -54,7 +54,7 @@ async fn payment_ws_handshake(
 /// Process messages received from the client, respond to ping messages, and monitor
 /// connection health to detect network issues and free up resources.
 pub async fn payment_ws(
-    payment: payment::Model,
+    mut payment: payment::Model,
     mut session: actix_ws::Session,
     mut msg_stream: actix_ws::MessageStream,
     db: Data<DbConn>,
@@ -85,6 +85,11 @@ pub async fn payment_ws(
                                 .text(WsOutputMessage::Error(err).into_str())
                                 .await
                                 .unwrap();
+                        } else {
+                            // if payment getting updated, replace new one
+                            if let Some(new_payment) = res.unwrap() {
+                                payment = new_payment;
+                            }
                         }
                     }
 
@@ -151,12 +156,12 @@ async fn process_text_msg(
     session: &mut actix_ws::Session,
     text: &str,
     db: &Data<DbConn>,
-) -> Result<(), AppError> {
+) -> Result<Option<payment::Model>, AppError> {
     let input_msg = WsInputMessage::try_from(text);
 
     if let Err(err) = input_msg {
         session.text(err.to_string()).await.unwrap();
-        return Ok(());
+        return Ok(None);
     }
 
     match input_msg.unwrap() {
@@ -177,6 +182,10 @@ async fn process_text_msg(
             .await
             .unwrap();
 
+            if let Some(dest_wallet_id) = payment.dest_wallet_id {
+                wallet_service::free(db, dest_wallet_id).await?;
+            }
+
             let wallet = wallet_service::reserve(db, crypto_currency.network_id).await?;
 
             let mut payment = payment::ActiveModel::from(payment.clone());
@@ -187,12 +196,13 @@ async fn process_text_msg(
             let payment = payment_service::update(db, payment).await?;
 
             session
-                .text(WsOutputMessage::PaymentUpdated(payment).into_str())
+                .text(WsOutputMessage::PaymentUpdated(payment.clone()).into_str())
                 .await
                 .unwrap();
+
+            Ok(Some(payment))
         }
     }
-    Ok(())
 }
 
 pub fn config(cfg: &mut ServiceConfig) {
