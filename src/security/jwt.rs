@@ -1,5 +1,5 @@
 use crate::entities::user;
-use actix_web::{dev::ServiceRequest, Error, HttpMessage};
+use actix_web::{dev::ServiceRequest, web::Data, Error, HttpMessage};
 use actix_web_grants::permissions::AttachPermissions;
 use actix_web_httpauth::extractors::{
     bearer::{BearerAuth, Config},
@@ -37,13 +37,8 @@ pub fn generate_jwt(user: &user::Model) -> String {
     format!("Bearer {token}")
 }
 
-fn verify_jwt(token: &str) -> Option<TokenData<Claims>> {
-    decode::<Claims>(
-        token,
-        &DecodingKey::from_secret(std::env::var("JWT_SECRET").unwrap().as_ref()),
-        &Validation::new(Algorithm::HS512),
-    )
-    .ok()
+fn verify_jwt(token: &str, decoding_key: &DecodingKey) -> Option<TokenData<Claims>> {
+    decode::<Claims>(token, decoding_key, &Validation::new(Algorithm::HS512)).ok()
 }
 
 pub async fn validator(
@@ -63,9 +58,11 @@ pub async fn validator(
     }
 
     if credentials.is_some() {
+        let jwt_decoding_key = req.app_data::<Data<DecodingKey>>().unwrap();
+
         let credentials = credentials.unwrap();
         let token = credentials.token();
-        let verify_res = verify_jwt(token);
+        let verify_res = verify_jwt(token, &jwt_decoding_key);
 
         if verify_res.is_some() {
             let claims = verify_res.unwrap().claims;

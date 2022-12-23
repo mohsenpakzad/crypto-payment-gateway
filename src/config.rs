@@ -1,4 +1,5 @@
 use config::{Config, ConfigError};
+use jsonwebtoken::DecodingKey;
 use migration::DbErr;
 use sea_orm::{ConnectOptions, Database, DbConn};
 use serde::Deserialize;
@@ -33,5 +34,9 @@ impl AppConfig {
         opt.sqlx_logging(false);
 
         Ok(Database::connect(opt).await?)
+    }
+
+    pub async fn create_jwt_decoding_key(&self) -> DecodingKey {
+        DecodingKey::from_secret(self.jwt_secret.as_ref())
     }
 }
