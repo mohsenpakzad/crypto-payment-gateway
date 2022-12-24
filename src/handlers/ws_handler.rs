@@ -27,7 +27,7 @@ const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-#[get("/ws/payment/{payment_id}")]
+#[get("/ws/payments/{payment_id}")]
 async fn payment_ws_handshake(
     path: Path<i32>,
     req: HttpRequest,

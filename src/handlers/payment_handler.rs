@@ -15,7 +15,7 @@ use chrono::{Duration, Utc};
 use sea_orm::{DbConn, Set};
 use serde_json::json;
 
-#[post("/payment")]
+#[post("/payments")]
 async fn create_payment(
     payment: Json<CreatePayment>,
     req_user: ReqData<Claims>,
@@ -59,7 +59,7 @@ async fn create_payment(
     Ok(HttpResponse::Created().json(payment_response))
 }
 
-#[post("/payment/verify")]
+#[post("/payments/verify")]
 async fn verify_payment(
     payment: Json<VerifyPayment>,
     req_user: ReqData<Claims>,
