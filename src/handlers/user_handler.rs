@@ -47,7 +47,7 @@ async fn get_user_payment(
 }
 
 #[get("/users/transactions")]
-async fn get_all_user_transaction(
+async fn get_all_user_transactions(
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
 ) -> Result<impl Responder, AppError> {
@@ -86,6 +86,6 @@ async fn get_user_transaction(
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(get_all_user_payments)
         .service(get_user_payment)
-        .service(get_all_user_transaction)
+        .service(get_all_user_transactions)
         .service(get_user_transaction);
 }
