@@ -6,14 +6,23 @@ use crate::security::jwt::Claims;
 use crate::services::{fiat_currency_service, payment_service, user_service};
 use actix_web::web::ReqData;
 use actix_web::{
-    post,
+    get, post,
     web::{Data, ServiceConfig},
     HttpResponse, Responder,
 };
+use actix_web_grants::proc_macro::has_any_role;
 use actix_web_validator::Json;
 use chrono::{Duration, Utc};
 use sea_orm::{DbConn, Set};
 use serde_json::json;
+
+#[get("/payments")]
+#[has_any_role("ADMIN")]
+async fn get_all_payments(db: Data<DbConn>) -> Result<impl Responder, AppError> {
+    let payments = payment_service::find_all(&db).await?;
+
+    Ok(HttpResponse::Ok().json(payments))
+}
 
 #[post("/payments")]
 async fn create_payment(
@@ -96,5 +105,7 @@ async fn verify_payment(
 }
 
 pub fn config(cfg: &mut ServiceConfig) {
-    cfg.service(create_payment).service(verify_payment);
+    cfg.service(create_payment)
+        .service(verify_payment)
+        .service(get_all_payments);
 }
