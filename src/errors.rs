@@ -59,11 +59,11 @@ impl ResponseError for AppError {
             AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             AppError::NotFreeWallet => StatusCode::IM_USED,
             // 404s
-            AppError::UserNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::NetworkNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::FiatCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::CryptoCurrencyNotFoundWithGivenId => StatusCode::NOT_FOUND,
-            AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            AppError::UserNotFoundWithGivenId
+            | AppError::NetworkNotFoundWithGivenId
+            | AppError::FiatCurrencyNotFoundWithGivenId
+            | AppError::CryptoCurrencyNotFoundWithGivenId
+            | AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
         }
     }
 
