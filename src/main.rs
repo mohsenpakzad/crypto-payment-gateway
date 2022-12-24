@@ -40,6 +40,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .wrap(HttpAuthentication::with_fn(security::jwt::validator))
+                    .configure(handlers::user_handler::config)
                     .configure(handlers::payment_handler::config)
                     .configure(handlers::asset_handler::config),
             )

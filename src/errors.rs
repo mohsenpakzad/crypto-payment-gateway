@@ -21,6 +21,9 @@ pub enum AppError {
     #[display(fmt = "This payment isn't belongs to you")]
     PaymentIsNotBelongsToYou,
 
+    #[display(fmt = "This transaction isn't belongs to you")]
+    UserTransactionIsNotBelongsToYou,
+
     #[display(fmt = "Payment is done or expired, payment status: {}", _0)]
     PaymentIsDoneOrExpired(PaymentStatus),
 
@@ -45,16 +48,22 @@ pub enum AppError {
 
     #[display(fmt = "Payment with given id doesn't exists")]
     PaymentNotFoundWithGivenId,
+
+    #[display(fmt = "Transaction with given id doesn't exists")]
+    UserTransactionNotFoundWithGivenId,
 }
 
 impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match *self {
+            // 500s
             AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::DataBaseError => StatusCode::INTERNAL_SERVER_ERROR,
+            // custom
             AppError::UsernameAlreadyFound => StatusCode::CONFLICT,
             AppError::WrongPassword => StatusCode::UNAUTHORIZED,
             AppError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
+            AppError::UserTransactionIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
             AppError::PaymentIsDoneOrExpired(_) => StatusCode::BAD_REQUEST,
             AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             AppError::NotFreeWallet => StatusCode::IM_USED,
@@ -63,7 +72,8 @@ impl ResponseError for AppError {
             | AppError::NetworkNotFoundWithGivenId
             | AppError::FiatCurrencyNotFoundWithGivenId
             | AppError::CryptoCurrencyNotFoundWithGivenId
-            | AppError::PaymentNotFoundWithGivenId => StatusCode::NOT_FOUND,
+            | AppError::PaymentNotFoundWithGivenId
+            | AppError::UserTransactionNotFoundWithGivenId => StatusCode::NOT_FOUND,
         }
     }
 
