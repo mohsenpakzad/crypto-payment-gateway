@@ -11,9 +11,20 @@ use crate::{
 };
 use actix_web::web::Data;
 use chrono::{Duration, Utc};
-use sea_orm::{DbConn, DeleteResult, Set};
+use sea_orm::{ColumnTrait, DbConn, DeleteResult, EntityTrait, QueryFilter, Set};
 
 impl_crud!(Payment, payment, AppError, i32);
+
+pub async fn find_all_by_user_id(
+    db: &DbConn,
+    user_id: i32,
+) -> Result<Vec<payment::Model>, AppError> {
+    Ok(Payment::find()
+        .filter(payment::Column::UserId.eq(user_id))
+        .all(db)
+        .await
+        .map_err(Into::into)?)
+}
 
 pub fn spawn_payment_exp_scheduler(run_after: Duration, payment_id: i32, db: Data<DbConn>) {
     tokio::spawn(async move {
