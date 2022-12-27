@@ -79,3 +79,9 @@ pub struct CreatePayment {
 pub struct VerifyPayment {
     pub id: i32,
 }
+
+#[derive(Deserialize, Clone, Debug, Validate)]
+pub struct BalanceWithdrawal {
+    pub fiat_currency_id: i32,
+    pub amount: Decimal,
+}

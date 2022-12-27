@@ -2,6 +2,7 @@ use crate::entities::payment::PaymentStatus;
 use actix_web::{http::StatusCode, Error, HttpResponse, ResponseError};
 use derive_more::Display;
 use migration::DbErr;
+use sea_orm::prelude::Decimal;
 use serde::Serialize;
 
 #[derive(Debug, Display, Serialize)]
@@ -32,6 +33,12 @@ pub enum AppError {
 
     #[display(fmt = "There is no free wallet for your selected network, please try again later")]
     NotFreeWallet,
+
+    #[display(
+        fmt = "There is not enough balance to withdrawal, withdrawable amount for this currency is: {}",
+        _0
+    )]
+    NotEnoughBalance(Decimal),
 
     // 404s
     #[display(fmt = "User with given id doesn't exists")]
@@ -67,6 +74,7 @@ impl ResponseError for AppError {
             AppError::PaymentIsDoneOrExpired(_) => StatusCode::BAD_REQUEST,
             AppError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             AppError::NotFreeWallet => StatusCode::IM_USED,
+            AppError::NotEnoughBalance(_) => StatusCode::NOT_ACCEPTABLE,
             // 404s
             AppError::UserNotFoundWithGivenId
             | AppError::NetworkNotFoundWithGivenId
