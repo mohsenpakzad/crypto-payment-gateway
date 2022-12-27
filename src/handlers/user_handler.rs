@@ -83,9 +83,24 @@ async fn get_user_transaction(
     Ok(HttpResponse::Ok().json(user_transaction))
 }
 
+#[get("/users/balance")]
+async fn get_user_balance(
+    req_user: ReqData<Claims>,
+    db: Data<DbConn>,
+) -> Result<impl Responder, AppError> {
+    let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
+        .await?
+        .ok_or(AppError::UserNotFoundWithGivenId)?;
+
+    let user_balance = user_transaction_service::get_user_balance(&db, user.id).await?;
+
+    Ok(HttpResponse::Ok().json(user_balance))
+}
+
 pub fn config(cfg: &mut ServiceConfig) {
     cfg.service(get_all_user_payments)
         .service(get_user_payment)
         .service(get_all_user_transactions)
-        .service(get_user_transaction);
+        .service(get_user_transaction)
+        .service(get_user_balance);
 }
