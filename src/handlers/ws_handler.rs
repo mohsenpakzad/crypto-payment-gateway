@@ -181,113 +181,116 @@ async fn process_text_msg(
 
     match input_msg.unwrap() {
         WsInputMessage::ChooseCrypto(crypto_currency_id) => {
-            let crypto_currency =
-                crypto_currency_service::find_by_id(&socket_data.db, crypto_currency_id)
-                    .await?
-                    .ok_or(AppError::CryptoCurrencyNotFoundWithGivenId)?;
+            choose_crypto(crypto_currency_id, session, socket_data).await
+        }
+    }
+}
 
-            let fiat_currency = fiat_currency_service::find_by_id(
-                &socket_data.db,
-                socket_data.payment.lock().unwrap().fiat_currency_id,
-            )
-            .await?
-            .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
+async fn choose_crypto(
+    crypto_currency_id: i32,
+    session: &mut actix_ws::Session,
+    socket_data: Arc<SocketData>,
+) -> Result<(), AppError> {
+    let crypto_currency = crypto_currency_service::find_by_id(&socket_data.db, crypto_currency_id)
+        .await?
+        .ok_or(AppError::CryptoCurrencyNotFoundWithGivenId)?;
 
-            let crypto_amount = kucoin_api_service::fiat_to_crypto(
-                &fiat_currency.symbol,
-                socket_data.payment.lock().unwrap().amount,
-                &crypto_currency.symbol,
-            )
+    let fiat_currency = fiat_currency_service::find_by_id(
+        &socket_data.db,
+        socket_data.payment.lock().unwrap().fiat_currency_id,
+    )
+    .await?
+    .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
+
+    let crypto_amount = kucoin_api_service::fiat_to_crypto(
+        &fiat_currency.symbol,
+        socket_data.payment.lock().unwrap().amount,
+        &crypto_currency.symbol,
+    )
+    .await
+    .unwrap();
+
+    if let Some(dest_wallet_id) = socket_data.payment.lock().unwrap().dest_wallet_id {
+        wallet_service::free(&socket_data.db, dest_wallet_id).await?;
+    }
+
+    let wallet = wallet_service::reserve(&socket_data.db, crypto_currency.network_id).await?;
+
+    let mut payment = payment::ActiveModel::from(socket_data.payment.lock().unwrap().clone());
+    payment.crypto_currency_id = Set(Some(crypto_currency.id));
+    payment.crypto_amount = Set(Some(crypto_amount));
+    payment.dest_wallet_id = Set(Some(wallet.id));
+
+    let payment = payment_service::update(&socket_data.db, payment).await?;
+
+    *socket_data.payment.lock().unwrap() = payment;
+
+    session
+        .text(
+            WsOutputMessage::PaymentUpdated(socket_data.payment.lock().unwrap().clone()).into_str(),
+        )
+        .await
+        .unwrap();
+
+    let network = network_service::find_by_id(&socket_data.db, crypto_currency.network_id)
+        .await?
+        .ok_or(AppError::NetworkNotFoundWithGivenId)?;
+
+    let socket_data_clone = Arc::clone(&socket_data);
+    let mut session = session.clone();
+
+    // ***** start payment task *****
+
+    let payment_task_handle = tokio::spawn(async move {
+        log::info!(
+            "Start subscribing transactions of payment with id: {}",
+            socket_data.payment.lock().unwrap().id
+        );
+
+        // TODO: maybe remove this?
+        let payment = socket_data.payment.lock().unwrap().clone();
+
+        let transaction_result = web3_service::subscribe_transactions(
+            &network.websocket_address_url,
+            &wallet.address,
+            payment.crypto_amount.unwrap(),
+            payment.expired_at,
+            &mut session,
+        )
+        .await;
+
+        if !transaction_result {
+            session
+                .text(WsOutputMessage::PaymentExpired(payment).into_str())
+                .await
+                .unwrap();
+            // payment_exp_scheduler will free payment wallet and update it's status
+            return;
+        }
+
+        wallet_service::free(&socket_data.db, payment.dest_wallet_id.unwrap())
             .await
             .unwrap();
 
-            if let Some(dest_wallet_id) = socket_data.payment.lock().unwrap().dest_wallet_id {
-                wallet_service::free(&socket_data.db, dest_wallet_id).await?;
-            }
+        let mut payment = payment::ActiveModel::from(socket_data.payment.lock().unwrap().clone());
+        payment.done_at = Set(Some(Utc::now().naive_utc()));
+        payment.status = Set(PaymentStatus::Done);
 
-            let wallet =
-                wallet_service::reserve(&socket_data.db, crypto_currency.network_id).await?;
+        let payment = payment_service::update(&socket_data.db, payment)
+            .await
+            .unwrap();
 
-            let mut payment =
-                payment::ActiveModel::from(socket_data.payment.lock().unwrap().clone());
-            payment.crypto_currency_id = Set(Some(crypto_currency.id));
-            payment.crypto_amount = Set(Some(crypto_amount));
-            payment.dest_wallet_id = Set(Some(wallet.id));
+        log::info!("Payment with id {} is done!", payment.id);
 
-            let payment = payment_service::update(&socket_data.db, payment).await?;
+        session
+            .text(WsOutputMessage::PaymentDone(payment).into_str())
+            .await
+            .unwrap();
+    });
 
-            *socket_data.payment.lock().unwrap() = payment;
+    *socket_data_clone.payment_task_handle.lock().unwrap() = Some(payment_task_handle);
 
-            session
-                .text(
-                    WsOutputMessage::PaymentUpdated(socket_data.payment.lock().unwrap().clone())
-                        .into_str(),
-                )
-                .await
-                .unwrap();
-
-            let network = network_service::find_by_id(&socket_data.db, crypto_currency.network_id)
-                .await?
-                .ok_or(AppError::NetworkNotFoundWithGivenId)?;
-
-            let socket_data_clone = Arc::clone(&socket_data);
-            let mut session = session.clone();
-
-            // ***** start payment task *****
-
-            let payment_task_handle = tokio::spawn(async move {
-                log::info!(
-                    "Start subscribing transactions of payment with id: {}",
-                    socket_data.payment.lock().unwrap().id
-                );
-
-                // TODO: maybe remove this?
-                let payment = socket_data.payment.lock().unwrap().clone();
-
-                let transaction_result = web3_service::subscribe_transactions(
-                    &network.websocket_address_url,
-                    &wallet.address,
-                    payment.crypto_amount.unwrap(),
-                    payment.expired_at,
-                    &mut session,
-                )
-                .await;
-
-                if !transaction_result {
-                    session
-                        .text(WsOutputMessage::PaymentExpired(payment).into_str())
-                        .await
-                        .unwrap();
-                    // payment_exp_scheduler will free payment wallet and update it's status
-                    return;
-                }
-
-                wallet_service::free(&socket_data.db, payment.dest_wallet_id.unwrap())
-                    .await
-                    .unwrap();
-
-                let mut payment =
-                    payment::ActiveModel::from(socket_data.payment.lock().unwrap().clone());
-                payment.done_at = Set(Some(Utc::now().naive_utc()));
-                payment.status = Set(PaymentStatus::Done);
-
-                let payment = payment_service::update(&socket_data.db, payment)
-                    .await
-                    .unwrap();
-
-                log::info!("Payment with id {} is done!", payment.id);
-
-                session
-                    .text(WsOutputMessage::PaymentDone(payment).into_str())
-                    .await
-                    .unwrap();
-            });
-
-            *socket_data_clone.payment_task_handle.lock().unwrap() = Some(payment_task_handle);
-
-            Ok(())
-        }
-    }
+    Ok(())
 }
 
 pub fn config(cfg: &mut ServiceConfig) {
