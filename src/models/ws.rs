@@ -1,5 +1,6 @@
 use crate::{entities::payment, errors::AppError};
 use derive_more::Display;
+use ethers::types::Transaction;
 
 #[derive(Debug)]
 pub enum WsInputMessage {
@@ -46,27 +47,35 @@ impl TryFrom<&str> for WsInputMessage {
 pub enum WsOutputMessage {
     #[display(fmt = "ERROR")]
     Error(AppError),
+
     #[display(fmt = "PAYMENT_UPDATED")]
     PaymentUpdated(payment::Model),
+
+    #[display(fmt = "PAYMENT_DONE")]
+    PaymentDone(payment::Model),
+
+    #[display(fmt = "PAYMENT_EXPIRED")]
+    PaymentExpired(payment::Model),
+
+    #[display(fmt = "TRANSACTION_RECEIVED")]
+    TransactionReceived(Transaction),
 }
 
 impl WsOutputMessage {
     pub fn into_str(self) -> String {
-        match self {
-            WsOutputMessage::Error(ref err) => {
-                format!(
-                    "{} {}",
-                    self.to_string(),
-                    serde_json::to_value(err).unwrap()
-                )
+        let param = match self {
+            WsOutputMessage::Error(ref err) => serde_json::to_value(err).unwrap(),
+
+            WsOutputMessage::PaymentUpdated(ref payment)
+            | WsOutputMessage::PaymentDone(ref payment)
+            | WsOutputMessage::PaymentExpired(ref payment) => {
+                serde_json::to_value(payment).unwrap()
             }
-            WsOutputMessage::PaymentUpdated(ref payment) => {
-                format!(
-                    "{} {}",
-                    self.to_string(),
-                    serde_json::to_value(payment).unwrap()
-                )
+
+            WsOutputMessage::TransactionReceived(ref transaction) => {
+                serde_json::to_value(transaction).unwrap()
             }
-        }
+        };
+        format!("{} {}", self.to_string(), param)
     }
 }
