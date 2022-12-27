@@ -1,6 +1,9 @@
 use sea_orm::prelude::Decimal;
 use serde_json::Value;
 
+const CRYPTO_DECIMAL_POINTS: u32 = 18;
+const FIAT_DECIMAL_POINTS: u32 = 2;
+
 pub async fn fiat_to_crypto(
     fiat_symbol: &str,
     fiat_amount: Decimal,
@@ -33,7 +36,7 @@ pub async fn fiat_to_crypto(
 
     let crypto_fiat_value = Decimal::from_str_exact(crypto_fiat_value).unwrap();
 
-    Ok(fiat_amount / crypto_fiat_value)
+    Ok((fiat_amount / crypto_fiat_value).round_dp(CRYPTO_DECIMAL_POINTS))
 }
 
 pub async fn crypto_to_fiat(
@@ -68,5 +71,5 @@ pub async fn crypto_to_fiat(
 
     let crypto_fiat_value = Decimal::from_str_exact(crypto_fiat_value).unwrap();
 
-    Ok(crypto_amount * crypto_fiat_value)
+    Ok((crypto_amount * crypto_fiat_value).round_dp(FIAT_DECIMAL_POINTS))
 }
