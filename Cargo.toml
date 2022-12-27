@@ -19,6 +19,7 @@ config = "0.13.3"
 derive_more = "0.99.17"
 dotenvy = "0.15.6"
 env_logger = "0.10.0"
+ethers = { version = "1.0.2", features = ["ws", "rustls", "openssl"] }
 futures-util = { version = "0.3.25", default-features = false, features = ["std"] }
 jsonwebtoken = "8.2.0"
 log = "0.4.17"
@@ -29,4 +30,3 @@ serde = { version = "1.0.149", features = ["derive"] }
 serde_json = "1.0.89"
 tokio = "1.23.0"
 validator = { version = "0.16.0", features = ["derive", "phone"] }
-web3 = "0.18.0"
