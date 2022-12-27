@@ -36,6 +36,8 @@ pub async fn subscribe_transactions(
             if transaction.to == Some(wallet_address) {
                 log::info!("New transaction received for wallet address {wallet_address} : {transaction:#?}");
 
+                // TODO: store transaction into db
+
                 session
                     .text(WsOutputMessage::TransactionReceived(transaction.clone()).into_str())
                     .await
