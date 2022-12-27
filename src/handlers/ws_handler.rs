@@ -19,14 +19,27 @@ use futures_util::{
     StreamExt,
 };
 use sea_orm::{DbConn, Set};
-use std::time::{Duration, Instant};
-use tokio::{pin, task, time::interval};
+use std::{
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
+};
+use tokio::{
+    pin,
+    task::{self, JoinHandle},
+    time::interval,
+};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 
 /// How long before lack of client response causes a timeout
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
+
+struct SocketData {
+    db: Data<DbConn>,
+    payment: Mutex<payment::Model>,
+    payment_task_handle: Mutex<Option<JoinHandle<()>>>,
+}
 
 #[get("/ws/payments/{payment_id}")]
 async fn payment_ws_handshake(
@@ -55,7 +68,7 @@ async fn payment_ws_handshake(
 /// Process messages received from the client, respond to ping messages, and monitor
 /// connection health to detect network issues and free up resources.
 pub async fn payment_ws(
-    mut payment: payment::Model,
+    payment: payment::Model,
     mut session: actix_ws::Session,
     mut msg_stream: actix_ws::MessageStream,
     db: Data<DbConn>,
@@ -64,6 +77,12 @@ pub async fn payment_ws(
 
     let mut last_heartbeat = Instant::now();
     let mut interval = interval(HEARTBEAT_INTERVAL);
+
+    let socket_data = Arc::new(SocketData {
+        db,
+        payment: Mutex::new(payment),
+        payment_task_handle: Mutex::new(None),
+    });
 
     let reason = loop {
         // create "next client timeout check" future
@@ -80,17 +99,13 @@ pub async fn payment_ws(
 
                 match msg {
                     Message::Text(text) => {
-                        let res = process_text_msg(&payment, &mut session, &text, &db).await;
+                        let res =
+                            process_text_msg(&mut session, &text, Arc::clone(&socket_data)).await;
                         if let Err(err) = res {
                             session
                                 .text(WsOutputMessage::Error(err).into_str())
                                 .await
                                 .unwrap();
-                        } else {
-                            // if payment getting updated, replace new one
-                            if let Some(new_payment) = res.unwrap() {
-                                payment = new_payment;
-                            }
                         }
                     }
 
@@ -153,69 +168,81 @@ pub async fn payment_ws(
 }
 
 async fn process_text_msg(
-    payment: &payment::Model,
     session: &mut actix_ws::Session,
     text: &str,
-    db: &Data<DbConn>,
-) -> Result<Option<payment::Model>, AppError> {
+    socket_data: Arc<SocketData>,
+) -> Result<(), AppError> {
     let input_msg = WsInputMessage::try_from(text);
 
     if let Err(err) = input_msg {
         session.text(err.to_string()).await.unwrap();
-        return Ok(None);
+        return Ok(());
     }
 
     match input_msg.unwrap() {
         WsInputMessage::ChooseCrypto(crypto_currency_id) => {
-            let crypto_currency = crypto_currency_service::find_by_id(&db, crypto_currency_id)
-                .await?
-                .ok_or(AppError::CryptoCurrencyNotFoundWithGivenId)?;
+            let crypto_currency =
+                crypto_currency_service::find_by_id(&socket_data.db, crypto_currency_id)
+                    .await?
+                    .ok_or(AppError::CryptoCurrencyNotFoundWithGivenId)?;
 
-            let fiat_currency = fiat_currency_service::find_by_id(db, payment.fiat_currency_id)
-                .await?
-                .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
+            let fiat_currency = fiat_currency_service::find_by_id(
+                &socket_data.db,
+                socket_data.payment.lock().unwrap().fiat_currency_id,
+            )
+            .await?
+            .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
 
             let crypto_amount = kucoin_api_service::fiat_to_crypto(
                 &fiat_currency.symbol,
-                payment.amount,
+                socket_data.payment.lock().unwrap().amount,
                 &crypto_currency.symbol,
             )
             .await
             .unwrap();
 
-            if let Some(dest_wallet_id) = payment.dest_wallet_id {
-                wallet_service::free(db, dest_wallet_id).await?;
+            if let Some(dest_wallet_id) = socket_data.payment.lock().unwrap().dest_wallet_id {
+                wallet_service::free(&socket_data.db, dest_wallet_id).await?;
             }
 
-            let wallet = wallet_service::reserve(db, crypto_currency.network_id).await?;
+            let wallet =
+                wallet_service::reserve(&socket_data.db, crypto_currency.network_id).await?;
 
-            let mut payment = payment::ActiveModel::from(payment.clone());
+            let mut payment =
+                payment::ActiveModel::from(socket_data.payment.lock().unwrap().clone());
             payment.crypto_currency_id = Set(Some(crypto_currency.id));
             payment.crypto_amount = Set(Some(crypto_amount));
             payment.dest_wallet_id = Set(Some(wallet.id));
 
-            let payment = payment_service::update(db, payment).await?;
+            let payment = payment_service::update(&socket_data.db, payment).await?;
+
+            *socket_data.payment.lock().unwrap() = payment;
 
             session
-                .text(WsOutputMessage::PaymentUpdated(payment.clone()).into_str())
+                .text(
+                    WsOutputMessage::PaymentUpdated(socket_data.payment.lock().unwrap().clone())
+                        .into_str(),
+                )
                 .await
                 .unwrap();
 
-            let network = network_service::find_by_id(&db, crypto_currency.network_id)
+            let network = network_service::find_by_id(&socket_data.db, crypto_currency.network_id)
                 .await?
                 .ok_or(AppError::NetworkNotFoundWithGivenId)?;
 
+            let socket_data_clone = Arc::clone(&socket_data);
             let mut session = session.clone();
-            let db = db.clone();
-            let payment_clone = payment.clone();
 
             // ***** start payment task *****
 
-            tokio::spawn(async move {
+            let payment_task_handle = tokio::spawn(async move {
                 log::info!(
                     "Start subscribing transactions of payment with id: {}",
-                    payment.id
+                    socket_data.payment.lock().unwrap().id
                 );
+
+                // TODO: maybe remove this?
+                let payment = socket_data.payment.lock().unwrap().clone();
 
                 let transaction_result = web3_service::subscribe_transactions(
                     &network.websocket_address_url,
@@ -235,15 +262,18 @@ async fn process_text_msg(
                     return;
                 }
 
-                wallet_service::free(&db, payment.dest_wallet_id.unwrap())
+                wallet_service::free(&socket_data.db, payment.dest_wallet_id.unwrap())
                     .await
                     .unwrap();
 
-                let mut payment = payment::ActiveModel::from(payment);
+                let mut payment =
+                    payment::ActiveModel::from(socket_data.payment.lock().unwrap().clone());
                 payment.done_at = Set(Some(Utc::now().naive_utc()));
                 payment.status = Set(PaymentStatus::Done);
 
-                let payment = payment_service::update(&db, payment).await.unwrap();
+                let payment = payment_service::update(&socket_data.db, payment)
+                    .await
+                    .unwrap();
 
                 log::info!("Payment with id {} is done!", payment.id);
 
@@ -253,7 +283,9 @@ async fn process_text_msg(
                     .unwrap();
             });
 
-            Ok(Some(payment_clone))
+            *socket_data_clone.payment_task_handle.lock().unwrap() = Some(payment_task_handle);
+
+            Ok(())
         }
     }
 }
