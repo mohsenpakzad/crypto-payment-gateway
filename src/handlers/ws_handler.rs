@@ -3,8 +3,8 @@ use crate::{
     errors::AppError,
     models::ws::{WsInputMessage, WsOutputMessage},
     services::{
-        crypto_currency_service, fiat_currency_service, kucoin_api_service, payment_service,
-        wallet_service,
+        crypto_currency_service, fiat_currency_service, kucoin_api_service, network_service,
+        payment_service, wallet_service, web3_service,
     },
 };
 use actix_web::{
@@ -13,6 +13,7 @@ use actix_web::{
     HttpRequest, Responder,
 };
 use actix_ws::Message;
+use chrono::Utc;
 use futures_util::{
     future::{self, Either},
     StreamExt,
@@ -200,7 +201,59 @@ async fn process_text_msg(
                 .await
                 .unwrap();
 
-            Ok(Some(payment))
+            let network = network_service::find_by_id(&db, crypto_currency.network_id)
+                .await?
+                .ok_or(AppError::NetworkNotFoundWithGivenId)?;
+
+            let mut session = session.clone();
+            let db = db.clone();
+            let payment_clone = payment.clone();
+
+            // ***** start payment task *****
+
+            tokio::spawn(async move {
+                log::info!(
+                    "Start subscribing transactions of payment with id: {}",
+                    payment.id
+                );
+
+                let transaction_result = web3_service::subscribe_transactions(
+                    &network.websocket_address_url,
+                    &wallet.address,
+                    payment.crypto_amount.unwrap(),
+                    payment.expired_at,
+                    &mut session,
+                )
+                .await;
+
+                if !transaction_result {
+                    session
+                        .text(WsOutputMessage::PaymentExpired(payment).into_str())
+                        .await
+                        .unwrap();
+                    // payment_exp_scheduler will free payment wallet and update it's status
+                    return;
+                }
+
+                wallet_service::free(&db, payment.dest_wallet_id.unwrap())
+                    .await
+                    .unwrap();
+
+                let mut payment = payment::ActiveModel::from(payment);
+                payment.done_at = Set(Some(Utc::now().naive_utc()));
+                payment.status = Set(PaymentStatus::Done);
+
+                let payment = payment_service::update(&db, payment).await.unwrap();
+
+                log::info!("Payment with id {} is done!", payment.id);
+
+                session
+                    .text(WsOutputMessage::PaymentDone(payment).into_str())
+                    .await
+                    .unwrap();
+            });
+
+            Ok(Some(payment_clone))
         }
     }
 }
