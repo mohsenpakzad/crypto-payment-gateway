@@ -211,6 +211,13 @@ async fn choose_crypto(
     .unwrap();
 
     if let Some(dest_wallet_id) = socket_data.payment.lock().unwrap().dest_wallet_id {
+        let mut payment_task_handle = socket_data.payment_task_handle.lock().unwrap();
+        if payment_task_handle.is_some() {
+            log::info!("Abort previous payment task");
+
+            payment_task_handle.as_ref().unwrap().abort();
+            *payment_task_handle = None;
+        }
         wallet_service::free(&socket_data.db, dest_wallet_id).await?;
     }
 
