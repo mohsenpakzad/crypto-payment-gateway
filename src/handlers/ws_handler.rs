@@ -259,10 +259,11 @@ async fn choose_crypto(
 
         let transaction_result = web3_service::subscribe_transactions(
             &network.websocket_address_url,
-            &wallet.address,
+            &wallet,
             payment.crypto_amount.unwrap(),
             payment.expired_at,
             &mut session,
+            socket_data.db.clone(),
         )
         .await;
 

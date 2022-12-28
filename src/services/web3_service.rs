@@ -1,21 +1,26 @@
+use crate::entities::{wallet, wallet_transaction};
 use crate::models::ws::WsOutputMessage;
+use crate::services::wallet_transaction_service;
+use actix_web::web::Data;
 use chrono::{NaiveDateTime, Utc};
 use ethers::{prelude::*, types::U256};
 use sea_orm::prelude::Decimal;
+use sea_orm::{DbConn, Set};
 use std::str::FromStr;
 use std::sync::Arc;
 
 pub async fn subscribe_transactions(
     websocket_url: &str,
-    wallet_address: &str,
+    wallet: &wallet::Model,
     payment_crypto: Decimal,
     expiration_date: NaiveDateTime,
     session: &mut actix_ws::Session,
+    db: Data<DbConn>,
 ) -> bool {
     let client = Provider::<Ws>::connect(websocket_url).await.unwrap();
     let client = Arc::new(client);
 
-    let wallet_address = wallet_address.parse::<Address>().unwrap();
+    let wallet_address = wallet.address.parse::<Address>().unwrap();
 
     let payment_crypto = convert_eth_to_wei(payment_crypto);
     log::info!(
@@ -36,12 +41,24 @@ pub async fn subscribe_transactions(
             if transaction.to == Some(wallet_address) {
                 log::info!("New transaction received for wallet address {wallet_address} : {transaction:#?}");
 
-                // TODO: store transaction into db
-
+                // broadcast new transaction into socket
                 session
                     .text(WsOutputMessage::TransactionReceived(transaction.clone()).into_str())
                     .await
                     .unwrap();
+
+                // store new transaction into db
+                let wallet_transaction = wallet_transaction::ActiveModel {
+                    hash: Set(transaction_hash.to_string()), //TODO: use full format
+                    wallet_id: Set(wallet.id),
+                    created_at: Set(Utc::now().naive_utc()),
+                    ..Default::default()
+                };
+                wallet_transaction_service::create(&db, wallet_transaction)
+                    .await
+                    .unwrap();
+
+                //TODO: move broadcast and db logic to outside the function
 
                 paid_crypto += transaction.value;
 
