@@ -1,4 +1,4 @@
-use crate::{entities::payment, errors::AppError};
+use crate::entities::payment;
 use derive_more::Display;
 use ethers::types::Transaction;
 
@@ -46,7 +46,7 @@ impl TryFrom<&str> for WsInputMessage {
 #[derive(Debug, Display)]
 pub enum WsOutputMessage {
     #[display(fmt = "ERROR")]
-    Error(AppError),
+    Error(anyhow::Error),
 
     #[display(fmt = "PAYMENT_UPDATED")]
     PaymentUpdated(payment::Model),
@@ -64,7 +64,10 @@ pub enum WsOutputMessage {
 impl WsOutputMessage {
     pub fn into_str(self) -> String {
         let param = match self {
-            WsOutputMessage::Error(ref err) => serde_json::to_value(err).unwrap(),
+            WsOutputMessage::Error(ref err) => {
+                let err = serde_error::Error::new(err.root_cause());
+                serde_json::to_value(err).unwrap()
+            }
 
             WsOutputMessage::PaymentUpdated(ref payment)
             | WsOutputMessage::PaymentDone(ref payment)
