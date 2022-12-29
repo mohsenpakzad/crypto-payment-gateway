@@ -68,10 +68,7 @@ pub enum WsOutputMessage {
 impl WsOutputMessage {
     pub fn into_str(self) -> String {
         let param = match self {
-            WsOutputMessage::Error(ref err) => {
-                let err = serde_error::Error::new(err.root_cause());
-                serde_json::to_value(err).unwrap()
-            }
+            WsOutputMessage::Error(ref err) => serde_json::to_value(err.to_string()).unwrap(),
 
             WsOutputMessage::PaymentUpdated(ref payment)
             | WsOutputMessage::PaymentDone(ref payment)
