@@ -173,14 +173,9 @@ async fn process_text_msg(
     text: &str,
     socket_data: Arc<SocketData>,
 ) -> Result<()> {
-    let input_msg = WsInputMessage::try_from(text);
+    let input_msg = WsInputMessage::try_from(text)?;
 
-    if let Err(err) = input_msg {
-        session.text(err.to_string()).await.unwrap();
-        return Ok(());
-    }
-
-    match input_msg.unwrap() {
+    match input_msg {
         WsInputMessage::ChooseCrypto(crypto_currency_id) => {
             choose_crypto(crypto_currency_id, session, socket_data).await
         }
