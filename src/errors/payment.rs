@@ -1,10 +1,9 @@
 use crate::entities::payment::PaymentStatus;
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use sea_orm::prelude::Decimal;
-use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error)]
 pub enum PaymentError {
     #[error("This payment isn't belongs to you")]
     PaymentIsNotBelongsToYou,

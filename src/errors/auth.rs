@@ -1,8 +1,7 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
-use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error)]
 pub enum AuthError {
     #[error("User with given username already exists")]
     UsernameAlreadyFound,

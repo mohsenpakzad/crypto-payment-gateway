@@ -1,9 +1,8 @@
 use actix_web::{http::StatusCode, HttpResponse, ResponseError};
 use migration::DbErr;
-use serde::Serialize;
 use thiserror::Error;
 
-#[derive(Debug, Error, Serialize)]
+#[derive(Debug, Error)]
 pub enum InternalError {
     #[error("Database Error")]
     DatabaseError,
