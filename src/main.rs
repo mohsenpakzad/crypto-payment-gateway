@@ -1,8 +1,3 @@
-use crate::config::AppConfig;
-use actix_cors::Cors;
-use actix_web::{middleware::Logger, web, App, HttpServer};
-use actix_web_httpauth::middleware::HttpAuthentication;
-
 mod config;
 mod entities;
 mod errors;
@@ -11,6 +6,11 @@ mod macros;
 mod models;
 mod security;
 mod services;
+
+use crate::config::AppConfig;
+use actix_cors::Cors;
+use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web_httpauth::middleware::HttpAuthentication;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
