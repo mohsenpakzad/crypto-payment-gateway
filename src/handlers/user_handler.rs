@@ -1,16 +1,15 @@
-use crate::entities::user_transaction;
-use crate::entities::user_transaction::UserTransactionType;
-use crate::errors::AppError;
-use crate::models::dtos::BalanceWithdrawal;
-use crate::security::jwt::Claims;
-use crate::services::{
-    fiat_currency_service, payment_service, user_service, user_transaction_service,
+use crate::{
+    entities::{user_transaction, user_transaction::UserTransactionType},
+    errors::{NotFoundError, PaymentError},
+    models::dtos::BalanceWithdrawal,
+    security::jwt::Claims,
+    services::{fiat_currency_service, payment_service, user_service, user_transaction_service},
 };
 use actix_web::web::ReqData;
 use actix_web::{
     get, post,
     web::{Data, Path, ServiceConfig},
-    HttpResponse, Responder,
+    Error, HttpResponse, Responder,
 };
 use actix_web_validator::Json;
 use chrono::Utc;
@@ -21,10 +20,10 @@ use sea_orm::{DbConn, Set};
 async fn get_all_user_payments(
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     let user_payments = payment_service::find_all_by_user_id(&db, user.id).await?;
 
@@ -36,19 +35,19 @@ async fn get_user_payment(
     path: Path<i32>,
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let payment_id = path.into_inner();
 
     let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     let payment = payment_service::find_by_id(&db, payment_id)
         .await?
-        .ok_or(AppError::PaymentNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::PaymentNotFoundWithGivenId)?;
 
     if payment.user_id != user.id {
-        return Err(AppError::PaymentIsNotBelongsToYou);
+        return Err(PaymentError::PaymentIsNotBelongsToYou)?;
     }
 
     Ok(HttpResponse::Ok().json(payment))
@@ -58,10 +57,10 @@ async fn get_user_payment(
 async fn get_all_user_transactions(
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     let user_payments = user_transaction_service::find_all_by_user_id(&db, user.id).await?;
 
@@ -73,19 +72,19 @@ async fn get_user_transaction(
     path: Path<i32>,
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let transaction_id = path.into_inner();
 
     let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     let user_transaction = user_transaction_service::find_by_id(&db, transaction_id)
         .await?
-        .ok_or(AppError::UserTransactionNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserTransactionNotFoundWithGivenId)?;
 
     if user_transaction.user_id != user.id {
-        return Err(AppError::UserTransactionIsNotBelongsToYou);
+        return Err(PaymentError::UserTransactionIsNotBelongsToYou)?;
     }
 
     Ok(HttpResponse::Ok().json(user_transaction))
@@ -95,10 +94,10 @@ async fn get_user_transaction(
 async fn get_user_balance(
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     let user_balance = user_transaction_service::get_user_balance(&db, user.id).await?;
 
@@ -110,28 +109,30 @@ async fn withdraw_balance(
     withdrawal: Json<BalanceWithdrawal>,
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let user = user_service::find_by_id(&db, req_user.sub.parse().unwrap())
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     fiat_currency_service::find_by_id(&db, withdrawal.fiat_currency_id)
         .await?
-        .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::FiatCurrencyNotFoundWithGivenId)?;
 
     let user_balance = user_transaction_service::get_user_balance(&db, user.id).await?;
 
     let fiat_currency_balance = user_balance.get(&withdrawal.fiat_currency_id);
 
     if fiat_currency_balance.is_none() {
-        return Err(AppError::NotEnoughBalance(
+        return Err(PaymentError::NotEnoughBalance(
             Decimal::from_str_exact("0").unwrap(),
-        ));
+        ))?;
     }
     let fiat_currency_balance = fiat_currency_balance.unwrap();
 
     if withdrawal.amount > *fiat_currency_balance {
-        return Err(AppError::NotEnoughBalance(fiat_currency_balance.clone()));
+        return Err(PaymentError::NotEnoughBalance(
+            fiat_currency_balance.clone(),
+        ))?;
     }
 
     let withdrawal_transaction = user_transaction::ActiveModel {

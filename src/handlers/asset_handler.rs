@@ -1,23 +1,23 @@
-use crate::entities::{
-    crypto_currency, fiat_currency, network,
-    wallet::{self, WalletStatus},
-};
-use crate::errors::AppError;
-use crate::models::dtos::{CreateCryptoCurrency, CreateFiatCurrency, CreateNetwork, CreateWallet};
-use crate::services::{
-    crypto_currency_service, fiat_currency_service, network_service, wallet_service,
+use crate::{
+    entities::{
+        crypto_currency, fiat_currency, network,
+        wallet::{self, WalletStatus},
+    },
+    errors::NotFoundError,
+    models::dtos::{CreateCryptoCurrency, CreateFiatCurrency, CreateNetwork, CreateWallet},
+    services::{crypto_currency_service, fiat_currency_service, network_service, wallet_service},
 };
 use actix_web::{
     get, post,
     web::{Data, ServiceConfig},
-    HttpResponse, Responder,
+    Error, HttpResponse, Responder,
 };
 use actix_web_grants::proc_macro::has_any_role;
 use actix_web_validator::Json;
 use sea_orm::{DbConn, Set};
 
 #[get("/networks")]
-async fn get_all_networks(db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn get_all_networks(db: Data<DbConn>) -> Result<impl Responder, Error> {
     let networks = network_service::find_all(&db).await?;
 
     Ok(HttpResponse::Ok().json(networks))
@@ -28,7 +28,7 @@ async fn get_all_networks(db: Data<DbConn>) -> Result<impl Responder, AppError> 
 async fn create_network(
     network: Json<CreateNetwork>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let network = network::ActiveModel {
         name: Set(network.name.clone()),
         http_address_url: Set(network.http_address_url.clone()),
@@ -41,7 +41,7 @@ async fn create_network(
 }
 
 #[get("/crypto-currencies")]
-async fn get_all_crypto_currencies(db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn get_all_crypto_currencies(db: Data<DbConn>) -> Result<impl Responder, Error> {
     let crypto_currencies = crypto_currency_service::find_all(&db).await?;
 
     Ok(HttpResponse::Ok().json(crypto_currencies))
@@ -52,10 +52,10 @@ async fn get_all_crypto_currencies(db: Data<DbConn>) -> Result<impl Responder, A
 async fn create_crypto_currency(
     crypto_currency: Json<CreateCryptoCurrency>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     network_service::find_by_id(&db, crypto_currency.network_id)
         .await?
-        .ok_or(AppError::NetworkNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::NetworkNotFoundWithGivenId)?;
 
     let crypto_currency = crypto_currency::ActiveModel {
         name: Set(crypto_currency.name.clone()),
@@ -69,7 +69,7 @@ async fn create_crypto_currency(
 }
 
 #[get("/wallets")]
-async fn get_all_wallets(db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn get_all_wallets(db: Data<DbConn>) -> Result<impl Responder, Error> {
     let wallets = wallet_service::find_all(&db).await?;
 
     Ok(HttpResponse::Ok().json(wallets))
@@ -80,10 +80,10 @@ async fn get_all_wallets(db: Data<DbConn>) -> Result<impl Responder, AppError> {
 async fn create_wallet(
     wallet: Json<CreateWallet>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     network_service::find_by_id(&db, wallet.network_id)
         .await?
-        .ok_or(AppError::NetworkNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::NetworkNotFoundWithGivenId)?;
 
     let wallet = wallet::ActiveModel {
         address: Set(wallet.address.clone()),
@@ -97,7 +97,7 @@ async fn create_wallet(
 }
 
 #[get("/fiat-currencies")]
-async fn get_all_fiat_currencies(db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn get_all_fiat_currencies(db: Data<DbConn>) -> Result<impl Responder, Error> {
     let crypto_currencies = fiat_currency_service::find_all(&db).await?;
 
     Ok(HttpResponse::Ok().json(crypto_currencies))
@@ -108,7 +108,7 @@ async fn get_all_fiat_currencies(db: Data<DbConn>) -> Result<impl Responder, App
 async fn create_fiat_currency(
     fiat_currency: Json<CreateFiatCurrency>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let fiat_currency = fiat_currency::ActiveModel {
         name: Set(fiat_currency.name.clone()),
         symbol: Set(fiat_currency.symbol.clone()),

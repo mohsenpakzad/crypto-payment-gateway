@@ -1,23 +1,25 @@
-use crate::entities::user;
-use crate::errors::AppError;
-use crate::models::dtos::{CreateUser, LoginUser};
-use crate::security::{hash, jwt};
-use crate::services::user_service;
+use crate::{
+    entities::user,
+    errors::{AuthError, NotFoundError},
+    models::dtos::{CreateUser, LoginUser},
+    security::{hash, jwt},
+    services::user_service,
+};
 use actix_web::{
     http::header,
     post,
     web::{Data, ServiceConfig},
-    HttpResponse, Responder,
+    Error, HttpResponse, Responder,
 };
 use actix_web_validator::Json;
 use chrono::Utc;
 use sea_orm::{DbConn, Set};
 
 #[post("/signup")]
-async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Responder, Error> {
     user_service::find_by_username(&db, &new_user.username)
         .await?
-        .map_or(Ok(()), |_| Err(AppError::UsernameAlreadyFound))?;
+        .map_or(Ok(()), |_| Err(AuthError::UsernameAlreadyFound))?;
 
     let password_hash = hash::hash_password(&new_user.password);
 
@@ -37,13 +39,13 @@ async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Res
 }
 
 #[post("/login")]
-async fn login(login_user: Json<LoginUser>, db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn login(login_user: Json<LoginUser>, db: Data<DbConn>) -> Result<impl Responder, Error> {
     let user = user_service::find_by_username(&db, &login_user.username)
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     if !hash::verify_password(&user.password_hash, &login_user.password) {
-        return Err(AppError::WrongPassword);
+        return Err(AuthError::WrongPassword)?;
     }
 
     Ok(HttpResponse::Ok()

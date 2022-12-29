@@ -1,6 +1,6 @@
 use crate::{
     entities::payment::{self, PaymentStatus},
-    errors::AppError,
+    errors::{NotFoundError, PaymentError},
     models::ws::{WsInputMessage, WsOutputMessage},
     services::{
         crypto_currency_service, fiat_currency_service, kucoin_api_service, network_service,
@@ -10,9 +10,10 @@ use crate::{
 use actix_web::{
     get,
     web::{Data, Path, Payload, ServiceConfig},
-    HttpRequest, Responder,
+    Error, HttpRequest, Responder,
 };
 use actix_ws::Message;
+use anyhow::Result;
 use chrono::Utc;
 use futures_util::{
     future::{self, Either},
@@ -47,18 +48,18 @@ async fn payment_ws_handshake(
     req: HttpRequest,
     body: Payload,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let payment_id = path.into_inner();
 
     let payment = payment_service::find_by_id(&db, payment_id)
         .await?
-        .ok_or(AppError::PaymentNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::PaymentNotFoundWithGivenId)?;
 
     if payment.status != PaymentStatus::Waiting {
-        return Err(AppError::PaymentIsDoneOrExpired(payment.status));
+        return Err(PaymentError::PaymentIsDoneOrExpired(payment.status))?;
     }
 
-    let (response, session, msg_stream) = actix_ws::handle(&req, body).map_err(Into::into)?;
+    let (response, session, msg_stream) = actix_ws::handle(&req, body)?;
 
     // spawn websocket handler (and don't await it) so that the response is returned immediately
     task::spawn_local(payment_ws(payment, session, msg_stream, db));
@@ -171,7 +172,7 @@ async fn process_text_msg(
     session: &mut actix_ws::Session,
     text: &str,
     socket_data: Arc<SocketData>,
-) -> Result<(), AppError> {
+) -> Result<()> {
     let input_msg = WsInputMessage::try_from(text);
 
     if let Err(err) = input_msg {
@@ -190,17 +191,17 @@ async fn choose_crypto(
     crypto_currency_id: i32,
     session: &mut actix_ws::Session,
     socket_data: Arc<SocketData>,
-) -> Result<(), AppError> {
+) -> Result<()> {
     let crypto_currency = crypto_currency_service::find_by_id(&socket_data.db, crypto_currency_id)
         .await?
-        .ok_or(AppError::CryptoCurrencyNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::CryptoCurrencyNotFoundWithGivenId)?;
 
     let fiat_currency = fiat_currency_service::find_by_id(
         &socket_data.db,
         socket_data.payment.lock().unwrap().fiat_currency_id,
     )
     .await?
-    .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
+    .ok_or(NotFoundError::FiatCurrencyNotFoundWithGivenId)?;
 
     let crypto_amount = kucoin_api_service::fiat_to_crypto(
         &fiat_currency.symbol,
@@ -241,7 +242,7 @@ async fn choose_crypto(
 
     let network = network_service::find_by_id(&socket_data.db, crypto_currency.network_id)
         .await?
-        .ok_or(AppError::NetworkNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::NetworkNotFoundWithGivenId)?;
 
     let socket_data_clone = Arc::clone(&socket_data);
     let mut session = session.clone();

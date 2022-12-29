@@ -1,14 +1,16 @@
-use crate::config::AppConfig;
-use crate::entities::payment::{self, PaymentStatus};
-use crate::errors::AppError;
-use crate::models::dtos::{CreatePayment, VerifyPayment};
-use crate::security::jwt::Claims;
-use crate::services::{fiat_currency_service, payment_service, user_service};
+use crate::{
+    config::AppConfig,
+    entities::payment::{self, PaymentStatus},
+    errors::{NotFoundError, PaymentError},
+    models::dtos::{CreatePayment, VerifyPayment},
+    security::jwt::Claims,
+    services::{fiat_currency_service, payment_service, user_service},
+};
 use actix_web::web::ReqData;
 use actix_web::{
     get, post,
     web::{Data, ServiceConfig},
-    HttpResponse, Responder,
+    Error, HttpResponse, Responder,
 };
 use actix_web_grants::proc_macro::has_any_role;
 use actix_web_validator::Json;
@@ -18,7 +20,7 @@ use serde_json::json;
 
 #[get("/payments")]
 #[has_any_role("ADMIN")]
-async fn get_all_payments(db: Data<DbConn>) -> Result<impl Responder, AppError> {
+async fn get_all_payments(db: Data<DbConn>) -> Result<impl Responder, Error> {
     let payments = payment_service::find_all(&db).await?;
 
     Ok(HttpResponse::Ok().json(payments))
@@ -30,16 +32,16 @@ async fn create_payment(
     req_user: ReqData<Claims>,
     config: Data<AppConfig>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let user_id = req_user.sub.parse::<i32>().unwrap();
 
     let user = user_service::find_by_id(&db, user_id)
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     fiat_currency_service::find_by_id(&db, payment.fiat_currency_id.clone())
         .await?
-        .ok_or(AppError::FiatCurrencyNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::FiatCurrencyNotFoundWithGivenId)?;
 
     let payment_waiting_duration = Duration::minutes(10); //TODO: use config
     let payment = payment::ActiveModel {
@@ -73,23 +75,23 @@ async fn verify_payment(
     payment: Json<VerifyPayment>,
     req_user: ReqData<Claims>,
     db: Data<DbConn>,
-) -> Result<impl Responder, AppError> {
+) -> Result<impl Responder, Error> {
     let user_id = req_user.sub.parse::<i32>().unwrap();
 
     let payment = payment_service::find_by_id(&db, payment.id)
         .await?
-        .ok_or(AppError::PaymentNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::PaymentNotFoundWithGivenId)?;
 
     let user = user_service::find_by_id(&db, user_id)
         .await?
-        .ok_or(AppError::UserNotFoundWithGivenId)?;
+        .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
     if payment.user_id != user.id {
-        return Err(AppError::PaymentIsNotBelongsToYou);
+        return Err(PaymentError::PaymentIsNotBelongsToYou)?;
     }
 
     if payment.status != PaymentStatus::Done {
-        return Err(AppError::PaymentShouldBeDone(payment.status));
+        return Err(PaymentError::PaymentShouldBeDone(payment.status))?;
     }
 
     let mut payment = payment::ActiveModel::from(payment);
