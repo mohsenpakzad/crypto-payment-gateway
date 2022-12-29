@@ -1373,7 +1373,6 @@ dependencies = [
  "reqwest",
  "sea-orm",
  "serde",
- "serde-error",
  "serde_json",
  "thiserror",
  "tokio",
@@ -4371,15 +4370,6 @@ checksum = "c599b3fd89a75e0c18d6d2be693ddb12cccaf771db4ff9e39097104808a014c0"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "serde-error"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e988182713aeed6a619a88bca186f6d6407483485ffe44c869ee264f8eabd13f"
-dependencies = [
- "serde",
 ]
 
 [[package]]
