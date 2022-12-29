@@ -43,7 +43,7 @@ async fn create_payment(
         .await?
         .ok_or(NotFoundError::FiatCurrencyNotFoundWithGivenId)?;
 
-    let payment_waiting_duration = Duration::minutes(10); //TODO: use config
+    let payment_waiting_duration = Duration::minutes(config.payment_waiting_duration_in_minutes);
     let payment = payment::ActiveModel {
         user_id: Set(user.id),
         fiat_currency_id: Set(payment.fiat_currency_id.clone()),

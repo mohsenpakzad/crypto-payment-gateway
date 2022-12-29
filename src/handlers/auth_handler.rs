@@ -1,4 +1,5 @@
 use crate::{
+    config::AppConfig,
     entities::user,
     errors::{AuthError, NotFoundError},
     models::dtos::{CreateUser, LoginUser},
@@ -16,7 +17,11 @@ use chrono::Utc;
 use sea_orm::{DbConn, Set};
 
 #[post("/signup")]
-async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Responder, Error> {
+async fn signup(
+    new_user: Json<CreateUser>,
+    config: Data<AppConfig>,
+    db: Data<DbConn>,
+) -> Result<impl Responder, Error> {
     user_service::find_by_username(&db, &new_user.username)
         .await?
         .map_or(Ok(()), |_| Err(AuthError::UsernameAlreadyFound))?;
@@ -34,12 +39,19 @@ async fn signup(new_user: Json<CreateUser>, db: Data<DbConn>) -> Result<impl Res
     let user = user_service::create(&db, user).await?;
 
     Ok(HttpResponse::Created()
-        .insert_header((header::AUTHORIZATION, jwt::generate_jwt(&user)))
+        .insert_header((
+            header::AUTHORIZATION,
+            jwt::generate_jwt(&user, config.jwt_validity_duration_in_days),
+        ))
         .json(user))
 }
 
 #[post("/login")]
-async fn login(login_user: Json<LoginUser>, db: Data<DbConn>) -> Result<impl Responder, Error> {
+async fn login(
+    login_user: Json<LoginUser>,
+    config: Data<AppConfig>,
+    db: Data<DbConn>,
+) -> Result<impl Responder, Error> {
     let user = user_service::find_by_username(&db, &login_user.username)
         .await?
         .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
@@ -49,7 +61,10 @@ async fn login(login_user: Json<LoginUser>, db: Data<DbConn>) -> Result<impl Res
     }
 
     Ok(HttpResponse::Ok()
-        .insert_header((header::AUTHORIZATION, jwt::generate_jwt(&user)))
+        .insert_header((
+            header::AUTHORIZATION,
+            jwt::generate_jwt(&user, config.jwt_validity_duration_in_days),
+        ))
         .finish())
 }
 

@@ -10,6 +10,8 @@ pub struct AppConfig {
     pub port: u16,
     pub database_url: String,
     pub jwt_secret: String,
+    pub jwt_validity_duration_in_days: i64,
+    pub payment_waiting_duration_in_minutes: i64,
     pub payment_gateway_base_url: String,
 }
 

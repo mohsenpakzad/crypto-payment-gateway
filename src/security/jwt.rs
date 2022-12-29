@@ -19,12 +19,12 @@ pub struct Claims {
     pub exp: i64,
 }
 
-pub fn generate_jwt(user: &user::Model) -> String {
+pub fn generate_jwt(user: &user::Model, validity_duration_in_days: i64) -> String {
     let claims = Claims {
         sub: user.id.to_string(),
         role: user.role.to_role_str(),
         iat: Utc::now().timestamp(),
-        exp: (Utc::now() + Duration::weeks(1)).timestamp(), //TODO: use config
+        exp: (Utc::now() + Duration::days(validity_duration_in_days)).timestamp(),
     };
 
     let token = encode(
