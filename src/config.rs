@@ -10,7 +10,7 @@ pub struct AppConfig {
     pub port: u16,
     pub database_url: String,
     pub jwt_secret: String,
-    pub base_payment_gateway_address: String,
+    pub payment_gateway_base_url: String,
 }
 
 impl AppConfig {

@@ -65,7 +65,7 @@ async fn create_payment(
 
     let payment_response = json!({
         "id": payment.id,
-        "link": format!("{}/{}", config.base_payment_gateway_address, payment.id),
+        "link": format!("{}/{}", config.payment_gateway_base_url, payment.id),
     });
     Ok(HttpResponse::Created().json(payment_response))
 }
