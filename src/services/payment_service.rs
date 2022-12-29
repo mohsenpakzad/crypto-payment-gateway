@@ -23,7 +23,7 @@ pub async fn find_all_by_user_id(
         .filter(payment::Column::UserId.eq(user_id))
         .all(db)
         .await
-        .map_err(Into::into)?)
+        .map_err(Into::<AppError>::into)?)
 }
 
 pub fn spawn_payment_exp_scheduler(run_after: Duration, payment_id: i32, db: Data<DbConn>) {

@@ -89,17 +89,17 @@ impl ResponseError for AppError {
     }
 }
 
-impl Into<AppError> for Error {
-    fn into(self) -> AppError {
-        log::error!("Internal server error: {self}");
+impl From<Error> for AppError {
+    fn from(value: Error) -> Self {
+        log::error!("Internal server error: {value}");
 
         AppError::InternalServerError
     }
 }
 
-impl Into<AppError> for DbErr {
-    fn into(self) -> AppError {
-        log::error!("Database error: {self}");
+impl From<DbErr> for AppError {
+    fn from(value: DbErr) -> AppError {
+        log::error!("Database error: {value}");
 
         AppError::DataBaseError
     }

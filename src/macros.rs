@@ -5,7 +5,10 @@ macro_rules! impl_crud {
         pub async fn find_all(db: &DbConn) -> Result<Vec<$mod::Model>, $into_err> {
             use sea_orm::EntityTrait;
 
-            Ok(<$struct>::find().all(db).await.map_err(Into::into)?)
+            Ok(<$struct>::find()
+                .all(db)
+                .await
+                .map_err(Into::<$into_err>::into)?)
         }
 
         #[allow(dead_code)]
@@ -15,7 +18,7 @@ macro_rules! impl_crud {
             Ok(<$struct>::find_by_id(id)
                 .one(db)
                 .await
-                .map_err(Into::into)?)
+                .map_err(Into::<$into_err>::into)?)
         }
 
         #[allow(dead_code)]
@@ -25,7 +28,7 @@ macro_rules! impl_crud {
         ) -> Result<$mod::Model, $into_err> {
             use sea_orm::ActiveModelTrait;
 
-            Ok(item.insert(db).await.map_err(Into::into)?)
+            Ok(item.insert(db).await.map_err(Into::<$into_err>::into)?)
         }
 
         #[allow(dead_code)]
@@ -35,14 +38,14 @@ macro_rules! impl_crud {
         ) -> Result<$mod::Model, $into_err> {
             use sea_orm::ActiveModelTrait;
 
-            Ok(item.update(db).await.map_err(Into::into)?)
+            Ok(item.update(db).await.map_err(Into::<$into_err>::into)?)
         }
 
         #[allow(dead_code)]
         pub async fn delete(db: &DbConn, item: $mod::Model) -> Result<DeleteResult, $into_err> {
             use sea_orm::ModelTrait;
 
-            Ok(item.delete(db).await.map_err(Into::into)?)
+            Ok(item.delete(db).await.map_err(Into::<$into_err>::into)?)
         }
     };
 }

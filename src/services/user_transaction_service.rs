@@ -18,7 +18,7 @@ pub async fn find_all_by_user_id(
         .filter(user_transaction::Column::UserId.eq(user_id))
         .all(db)
         .await
-        .map_err(Into::into)?)
+        .map_err(Into::<AppError>::into)?)
 }
 
 pub async fn get_user_balance(

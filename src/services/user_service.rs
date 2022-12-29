@@ -16,5 +16,5 @@ pub async fn find_by_username(
         .filter(user::Column::Username.eq(username.clone()))
         .one(db)
         .await
-        .map_err(Into::into)?)
+        .map_err(Into::<AppError>::into)?)
 }

@@ -14,7 +14,7 @@ pub async fn reserve(db: &DbConn, network_id: i32) -> Result<wallet::Model, AppE
         .filter(wallet::Column::NetworkId.eq(network_id))
         .one(db)
         .await
-        .map_err(Into::into)?
+        .map_err(Into::<AppError>::into)?
         .ok_or(AppError::NotFreeWallet)?;
 
     let mut wallet = wallet::ActiveModel::from(wallet);
