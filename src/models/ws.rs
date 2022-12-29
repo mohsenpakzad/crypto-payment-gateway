@@ -1,16 +1,20 @@
 use crate::entities::payment;
 use derive_more::Display;
 use ethers::types::Transaction;
+use thiserror::Error;
 
 #[derive(Debug)]
 pub enum WsInputMessage {
     ChooseCrypto(i32),
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, Error)]
 pub enum WsInputMessageParseError {
+    #[error("Command not found")]
     CommandNotFound,
+    #[error("No command argument")]
     NoCommandArgument,
+    #[error("Bad command argument")]
     BadCommandArgument,
 }
 
