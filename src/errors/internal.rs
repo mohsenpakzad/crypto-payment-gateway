@@ -5,7 +5,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum InternalError {
     #[error("Database Error")]
-    DatabaseError,
+    DatabaseError(DbErr),
 }
 
 impl ResponseError for InternalError {
@@ -22,6 +22,6 @@ impl From<DbErr> for InternalError {
     fn from(value: DbErr) -> Self {
         log::error!("Database error: {value}");
 
-        InternalError::DatabaseError
+        InternalError::DatabaseError(value)
     }
 }
