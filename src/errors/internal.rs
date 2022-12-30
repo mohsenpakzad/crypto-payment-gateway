@@ -14,7 +14,7 @@ impl ResponseError for InternalError {
     }
 
     fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code()).body(self.to_string())
+        HttpResponse::build(self.status_code()).body("Internal server error")
     }
 }
 
