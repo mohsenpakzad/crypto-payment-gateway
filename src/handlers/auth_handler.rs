@@ -14,11 +14,13 @@ use actix_web::{
 };
 use actix_web_validator::Json;
 use chrono::Utc;
+use jsonwebtoken::EncodingKey;
 use sea_orm::{DbConn, Set};
 
 #[post("/signup")]
 async fn signup(
     new_user: Json<CreateUser>,
+    jwt_encoding_key: Data<EncodingKey>,
     config: Data<AppConfig>,
     db: Data<DbConn>,
 ) -> Result<impl Responder, Error> {
@@ -41,7 +43,11 @@ async fn signup(
     Ok(HttpResponse::Created()
         .insert_header((
             header::AUTHORIZATION,
-            jwt::generate_jwt(&user, config.jwt_validity_duration_in_days),
+            jwt::generate_jwt(
+                &user,
+                &jwt_encoding_key,
+                config.jwt_validity_duration_in_days,
+            ),
         ))
         .json(user))
 }
@@ -49,6 +55,7 @@ async fn signup(
 #[post("/login")]
 async fn login(
     login_user: Json<LoginUser>,
+    jwt_encoding_key: Data<EncodingKey>,
     config: Data<AppConfig>,
     db: Data<DbConn>,
 ) -> Result<impl Responder, Error> {
@@ -63,7 +70,11 @@ async fn login(
     Ok(HttpResponse::Ok()
         .insert_header((
             header::AUTHORIZATION,
-            jwt::generate_jwt(&user, config.jwt_validity_duration_in_days),
+            jwt::generate_jwt(
+                &user,
+                &jwt_encoding_key,
+                config.jwt_validity_duration_in_days,
+            ),
         ))
         .finish())
 }

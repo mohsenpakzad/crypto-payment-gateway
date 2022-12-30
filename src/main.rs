@@ -22,9 +22,11 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to setup the database");
 
+    let jwt_encoding_key = config.create_jwt_encoding_key().await;
     let jwt_decoding_key = config.create_jwt_decoding_key().await;
 
     let db_data = web::Data::new(db);
+    let jwt_encoding_key_data = web::Data::new(jwt_encoding_key);
     let jwt_decoding_key_data = web::Data::new(jwt_decoding_key);
     let config_data = web::Data::new(config.clone());
 
@@ -33,6 +35,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Cors::permissive())
             .app_data(config_data.clone())
+            .app_data(jwt_encoding_key_data.clone())
             .app_data(jwt_decoding_key_data.clone())
             .app_data(db_data.clone())
             .configure(handlers::auth_handler::config)

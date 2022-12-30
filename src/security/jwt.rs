@@ -19,7 +19,11 @@ pub struct Claims {
     pub exp: i64,
 }
 
-pub fn generate_jwt(user: &user::Model, validity_duration_in_days: i64) -> String {
+pub fn generate_jwt(
+    user: &user::Model,
+    encoding_key: &EncodingKey,
+    validity_duration_in_days: i64,
+) -> String {
     let claims = Claims {
         sub: user.id.to_string(),
         role: user.role.to_role_str(),
@@ -27,12 +31,7 @@ pub fn generate_jwt(user: &user::Model, validity_duration_in_days: i64) -> Strin
         exp: (Utc::now() + Duration::days(validity_duration_in_days)).timestamp(),
     };
 
-    let token = encode(
-        &Header::new(Algorithm::HS512),
-        &claims,
-        &EncodingKey::from_secret(std::env::var("JWT_SECRET").unwrap().as_ref()),
-    )
-    .unwrap();
+    let token = encode(&Header::new(Algorithm::HS512), &claims, encoding_key).unwrap();
 
     format!("Bearer {token}")
 }
