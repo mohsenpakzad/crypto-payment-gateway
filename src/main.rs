@@ -30,6 +30,19 @@ async fn main() -> std::io::Result<()> {
     let jwt_decoding_key_data = web::Data::new(jwt_decoding_key);
     let config_data = web::Data::new(config.clone());
 
+    //  @Bean
+    // CorsConfigurationSource corsConfigurationSource() {
+    //     CorsConfiguration configuration = new CorsConfiguration();
+    //     configuration.setAllowedOrigins(List.of("http://localhost:3000")); // TODO: keep sync this with client
+    //     configuration.setAllowCredentials(true);
+    //     configuration.setAllowedMethods(List.of("*"));
+    //     configuration.setExposedHeaders(List.of("*"));
+    //     configuration.setAllowedHeaders(List.of("*"));
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/**", configuration);
+    //     return source;
+    // }
+
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())

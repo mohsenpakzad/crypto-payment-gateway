@@ -7,7 +7,6 @@ use crate::{
     services::user_service,
 };
 use actix_web::{
-    http::header,
     post,
     web::{Data, ServiceConfig},
     Error, HttpResponse, Responder,
@@ -40,16 +39,22 @@ async fn signup(
 
     let user = user_service::create(&db, user).await?;
 
-    Ok(HttpResponse::Created()
-        .insert_header((
-            header::AUTHORIZATION,
-            jwt::generate_jwt(
-                &user,
-                &jwt_encoding_key,
-                config.jwt_validity_duration_in_days,
-            ),
-        ))
-        .json(user))
+    // Ok(HttpResponse::Created()
+    //     .insert_header((
+    //         header::AUTHORIZATION,
+    //         jwt::generate_jwt(
+    //             &user,
+    //             &jwt_encoding_key,
+    //             config.jwt_validity_duration_in_days,
+    //         ),
+    //     ))
+    //     .json(user))
+
+    Ok(HttpResponse::Created().json(jwt::generate_jwt(
+        &user,
+        &jwt_encoding_key,
+        config.jwt_validity_duration_in_days,
+    )))
 }
 
 #[post("/login")]
@@ -67,16 +72,22 @@ async fn login(
         return Err(AuthError::WrongPassword)?;
     }
 
-    Ok(HttpResponse::Ok()
-        .insert_header((
-            header::AUTHORIZATION,
-            jwt::generate_jwt(
-                &user,
-                &jwt_encoding_key,
-                config.jwt_validity_duration_in_days,
-            ),
-        ))
-        .finish())
+    // Ok(HttpResponse::Ok()
+    //     .insert_header((
+    //         header::AUTHORIZATION,
+    //         jwt::generate_jwt(
+    //             &user,
+    //             &jwt_encoding_key,
+    //             config.jwt_validity_duration_in_days,
+    //         ),
+    //     ))
+    //     .finish())
+
+    Ok(HttpResponse::Ok().json(jwt::generate_jwt(
+        &user,
+        &jwt_encoding_key,
+        config.jwt_validity_duration_in_days,
+    )))
 }
 
 pub fn config(cfg: &mut ServiceConfig) {
