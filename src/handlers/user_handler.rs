@@ -1,7 +1,7 @@
 use crate::{
     entities::{user_transaction, user_transaction::UserTransactionType},
     errors::{NotFoundError, PaymentError},
-    models::dtos::BalanceWithdrawal,
+    models::dtos::{BalanceWithdrawal, FiatBalance},
     security::jwt::Claims,
     services::{fiat_currency_service, payment_service, user_service, user_transaction_service},
 };
@@ -99,7 +99,14 @@ async fn get_user_balance(
         .await?
         .ok_or(NotFoundError::UserNotFoundWithGivenId)?;
 
-    let user_balance = user_transaction_service::get_user_balance(&db, user.id).await?;
+    let user_balance = user_transaction_service::get_user_balance(&db, user.id)
+        .await?
+        .into_iter()
+        .map(|(fiat_currency_id, balance)| FiatBalance {
+            fiat_currency_id,
+            balance,
+        })
+        .collect::<Vec<_>>();
 
     Ok(HttpResponse::Ok().json(user_balance))
 }
