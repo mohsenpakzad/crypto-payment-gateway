@@ -1,5 +1,5 @@
 use sea_orm::prelude::Decimal;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Deserialize, Clone, Debug, Validate)]
@@ -84,4 +84,9 @@ pub struct VerifyPayment {
 pub struct BalanceWithdrawal {
     pub fiat_currency_id: i32,
     pub amount: Decimal,
+}
+#[derive(Serialize)]
+pub struct FiatBalance {
+    pub fiat_currency_id: i32,
+    pub balance: Decimal,
 }
