@@ -11,8 +11,8 @@ pub enum PaymentError {
     #[error("This transaction isn't belongs to you")]
     UserTransactionIsNotBelongsToYou,
 
-    #[error("Payment is done or expired, payment status: {0}")]
-    PaymentIsDoneOrExpired(PaymentStatus),
+    #[error("Payment should be in 'WAITING' state to be payable, current payment state: {0}")]
+    PaymentIsNotPayable(PaymentStatus),
 
     #[error("Payment should be done to be verified, current status: {0}")]
     PaymentShouldBeDone(PaymentStatus),
@@ -31,7 +31,7 @@ impl ResponseError for PaymentError {
         match *self {
             PaymentError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
             PaymentError::UserTransactionIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
-            PaymentError::PaymentIsDoneOrExpired(_) => StatusCode::BAD_REQUEST,
+            PaymentError::PaymentIsNotPayable(_) => StatusCode::NOT_ACCEPTABLE,
             PaymentError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             PaymentError::NotFreeWallet => StatusCode::IM_USED,
             PaymentError::NotEnoughBalance(_) => StatusCode::NOT_ACCEPTABLE,
