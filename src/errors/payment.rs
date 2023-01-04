@@ -31,7 +31,7 @@ impl ResponseError for PaymentError {
         match *self {
             PaymentError::PaymentIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
             PaymentError::UserTransactionIsNotBelongsToYou => StatusCode::UNAUTHORIZED,
-            PaymentError::PaymentIsNotPayable(_) => StatusCode::BAD_REQUEST,
+            PaymentError::PaymentIsNotPayable(_) => StatusCode::NOT_ACCEPTABLE,
             PaymentError::PaymentShouldBeDone(_) => StatusCode::BAD_REQUEST,
             PaymentError::NotFreeWallet => StatusCode::IM_USED,
             PaymentError::NotEnoughBalance(_) => StatusCode::NOT_ACCEPTABLE,
