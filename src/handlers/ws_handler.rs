@@ -56,7 +56,7 @@ async fn payment_ws_handshake(
         .ok_or(NotFoundError::PaymentNotFoundWithGivenId)?;
 
     if payment.status != PaymentStatus::Waiting {
-        return Err(PaymentError::PaymentIsDoneOrExpired(payment.status))?;
+        return Err(PaymentError::PaymentIsNotPayable(payment.status))?;
     }
 
     let (response, session, msg_stream) = actix_ws::handle(&req, body)?;
